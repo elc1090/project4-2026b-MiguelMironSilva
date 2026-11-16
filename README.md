@@ -18,7 +18,7 @@ Substitua este texto pela URL para acesso ao seu app publicado. Adicione a URL t
 
 
 ## Desenvolvedor(a) / Desenvolvedor(es/as)
-- Miguel Miron Silva
+- [Miguel Miron Silva](misilva@inf.ufsm.br)
 
 
 ## Proposta
