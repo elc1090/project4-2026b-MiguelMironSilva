@@ -18,13 +18,18 @@ Substitua este texto pela URL para acesso ao seu app publicado. Adicione a URL t
 
 
 ## Desenvolvedor(a) / Desenvolvedor(es/as)
-Substitua este texto pela identificação (nome e curso) de quem desenvolveu o trabalho (individual ou dupla)
-
+- Miguel Miron Silva
 
 
 ## Proposta
-Substitua este texto pela descrição da proposta que consta no documento compartilhado com a turma. Indique se é uma continuação de projeto anterior ou uma nova aplicação, explicando o contraste/avanço em relação aos projetos anteriores.
+ Completar o desenvolvimento do trabalho do terceiro projeto, adicionando funções que faltam (superusuário, sistema de resenhas, habilidade de deletar resenhas/usuários). Além disso, implementar:
 
+
+1) Containeirizar frontend e backend com o docker
+
+2) Implementação de login com Google e/ou GitHub via OAuth2/OIDC 
+
+3) API de IA (preferencialmente Gemini): Extrair todas as resenhas de um filme e retornar um resumo delas
 
 
 ## Desenvolvimento
@@ -54,9 +59,17 @@ Substitua este texto por uma lista detalhada de tecnologias utilizadas:
 
 ### Ambiente de desenvolvimento
 
-Substitua este trecho por uma lista detalhada dos ambientes/ferramentas de desenvolvimento usados (por exemplo, VS Code + alguma extensão, agentes de IA, etc.)
-- ...
-- ...
+Backend
+- Linguagem: Python
+- Framework: FastAPI
+- Banco de dados: SQLAlchemy + SQLite
+- Hospedagem: Render
+
+Frontend
+- HTML5 + CSS3 + JavaScript
+- Frameworks: React.js + Vite
+- Hospedagem: Netlify
+
 
 ## Referências e créditos
 
