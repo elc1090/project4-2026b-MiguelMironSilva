@@ -53,3 +53,15 @@ def get_current_user(
 
     except InvalidTokenError:
         raise credentials_exception
+
+
+def get_current_superuser(
+    current_user: Annotated[User, Depends(get_current_user)],
+) -> User:
+    # Authorize using the current database row, never token role claims.
+    if not current_user.is_superuser:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso restrito a superusuários",
+        )
+    return current_user

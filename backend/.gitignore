@@ -6,3 +6,6 @@ __pycache__/
 *.py[cod]
 .pytest_cache/
 .test-artifacts/
+REGRAS_DE_ACESSO.md
+MIGRACOES.md
+requirements.test.txt

@@ -4,8 +4,8 @@ from pwdlib import PasswordHash
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
-from app.config import settings
 from app.models.user import User
+from app.schemas.auth import UserCreate
 
 
 password_hash = PasswordHash.recommended()
@@ -17,14 +17,17 @@ def create_user(
     email: str,
     password: str,
 ) -> dict:
-    username = username.strip()
-    email = email.strip().lower()
+    data = UserCreate(username=username, email=email, password=password)
+    username = data.username
+    email = data.email.lower()
+    password = data.password
 
     user = User(
         username=username,
         email=email,
         password_hash=password_hash.hash(password),
         created_at=datetime.now(timezone.utc),
+        is_superuser=False,
     )
 
     db.add(user)
@@ -42,6 +45,7 @@ def create_user(
         "id": str(user.id),
         "username": user.username,
         "email": user.email,
+        "is_superuser": user.is_superuser,
     }
 
 
@@ -77,6 +81,9 @@ def create_access_token(
     user_id: str,
     expires_minutes: int = 30,
 ) -> str:
+    # Local account provisioning does not need JWT or TMDB credentials.
+    from app.config import settings
+
     expire = datetime.now(timezone.utc) + timedelta(
         minutes=expires_minutes
     )

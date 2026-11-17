@@ -1,7 +1,10 @@
+import { canAccessAdmin } from "../services/adminPolicy.js";
+
 function Header({
 user,
 onLogin,
 onMyMovies,
+onAdmin,
 onLogout,
 onToggleTheme,
 isDarkMode,
@@ -26,6 +29,15 @@ return ( <header> <div className="logo"> <img
                         <span id="username-display">
                             {user.username}
                         </span>
+
+                        {canAccessAdmin(user) && (
+                            <>
+                                <span className="superuser-badge">Superusuário</span>
+                                <button type="button" onClick={onAdmin}>
+                                    Administração
+                                </button>
+                            </>
+                        )}
 
                         <button
                             type="button"

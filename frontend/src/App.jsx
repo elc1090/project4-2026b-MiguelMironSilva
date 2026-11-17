@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
 clearToken,
@@ -13,6 +13,8 @@ import AuthPanel from "./components/AuthPanel.jsx";
 import MovieSearch from "./components/MovieSearch.jsx";
 import MovieDetails from "./components/MovieDetails.jsx";
 import MyMovies from "./components/MyMovies.jsx";
+import AdminArea from "./components/AdminArea.jsx";
+import { canAccessAdmin } from "./services/adminPolicy.js";
 
 function App() {
 const [currentUser, setCurrentUser] = useState(null);
@@ -21,6 +23,32 @@ const [currentView, setCurrentView] = useState("search");
 const [showAuthPanel, setShowAuthPanel] = useState(false);
 const [isDarkMode, setIsDarkMode] = useState(false);
 const [isInitializing, setIsInitializing] = useState(true);
+const sessionRevision = useRef(0);
+
+const handleAdminAccessDenied = useCallback(async (status) => {
+    const revision = ++sessionRevision.current;
+    // Never leave stale admin UI visible while /auth/me is being refreshed.
+    setCurrentUser(user => user ? { ...user, is_superuser: false } : null);
+    if (status === 401) {
+        clearToken();
+        setCurrentUser(null);
+        return;
+    }
+    try {
+        const user = await getCurrentUser();
+        if (revision === sessionRevision.current) {
+            // /admin/me denial takes precedence over an inconsistent/stale /auth/me.
+            setCurrentUser({ ...user, is_superuser: false });
+        }
+    } catch (error) {
+        if (revision !== sessionRevision.current) return;
+        if (error.status === 401) {
+            clearToken();
+            setCurrentUser(null);
+        }
+        // On network/server errors retain the conservatively hidden admin role.
+    }
+}, []);
 
 
 useEffect(() => {
@@ -42,6 +70,7 @@ useEffect(() => {
 
 
 const handleLogin = async (username, password) => {
+    ++sessionRevision.current;
     await login(username, password);
 
     const user = await getCurrentUser();
@@ -66,6 +95,7 @@ const handleRegister = async (
 
 
 const handleLogout = () => {
+    ++sessionRevision.current;
     logout();
 
     setCurrentUser(null);
@@ -86,6 +116,13 @@ const handleOpenMyMovies = () => {
     setCurrentMovie(null);
 };
 
+
+const handleOpenAdmin = () => {
+    if (!canAccessAdmin(currentUser)) return;
+    setCurrentMovie(null);
+    setShowAuthPanel(false);
+    setCurrentView("admin");
+};
 
 const handleBackToSearch = () => {
     setCurrentView("search");
@@ -121,6 +158,7 @@ return (
             user={currentUser}
             onLogin={() => setShowAuthPanel(true)}
             onMyMovies={handleOpenMyMovies}
+            onAdmin={handleOpenAdmin}
             onLogout={handleLogout}
             onToggleTheme={toggleTheme}
             isDarkMode={isDarkMode}
@@ -134,6 +172,15 @@ return (
             />
         )}
 
+
+        {currentView === "admin" && (
+            <AdminArea
+                user={currentUser}
+                onBack={handleBackToSearch}
+                onLogin={() => setShowAuthPanel(true)}
+                onAccessDenied={handleAdminAccessDenied}
+            />
+        )}
 
         {currentView === "search" && (
             <MovieSearch

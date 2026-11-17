@@ -4,6 +4,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
+from app.models.user import User
 from app.schemas.auth import (
     TokenResponse,
     UserCreate,
@@ -82,10 +83,11 @@ def login(
     response_model=UserResponse,
 )
 def get_me(
-    current_user: Annotated[dict, Depends(get_current_user)],
+    current_user: Annotated[User, Depends(get_current_user)],
 ):
     return {
         "id": str(current_user.id),
         "username": current_user.username,
         "email": current_user.email,
+        "is_superuser": current_user.is_superuser,
     }

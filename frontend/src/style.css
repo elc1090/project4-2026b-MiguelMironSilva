@@ -1007,6 +1007,82 @@ text-align: center;
 }
 
 /* ============================================================
+ÁREA ADMINISTRATIVA
+============================================================ */
+
+/* Keep the expanded account controls in normal flow, without logo overlap. */
+header .header-controls {
+    position: static;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 8px 15px 16px;
+}
+
+.logged-in-controls {
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+#username-display {
+    overflow-wrap: anywhere;
+}
+
+.superuser-badge {
+    display: inline-block;
+    padding: 4px 9px;
+    border: 1px solid var(--primary-border-color);
+    border-radius: 999px;
+    background: var(--secondary-text-color);
+    color: var(--body-bg-color);
+    font: 600 0.85rem 'Segoe UI', sans-serif;
+}
+
+.admin-area {
+    width: min(760px, calc(100% - 30px));
+    margin: 24px auto;
+    font-family: 'Segoe UI', sans-serif;
+    color: var(--secondary-text-color);
+}
+
+.admin-area h1 {
+    margin-bottom: 20px;
+    font-size: clamp(1.6rem, 5vw, 2.5rem);
+}
+
+.admin-card {
+    padding: 20px;
+    border: 2px solid var(--primary-border-color);
+    border-radius: 10px;
+    background: var(--movie-search-bg-color);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.admin-card p + p,
+.admin-card .movie-back-btn {
+    margin-top: 16px;
+}
+
+.admin-identity {
+    margin: 20px 0;
+}
+
+.admin-identity dt {
+    font-weight: bold;
+}
+
+.admin-identity dd {
+    margin-bottom: 12px;
+}
+
+.admin-area button:focus-visible,
+.account-controls button:focus-visible {
+    outline: 3px solid var(--secondary-text-color);
+    outline-offset: 3px;
+}
+
+/* ============================================================
 DESIGN RESPONSIVO
 ============================================================ */
 
