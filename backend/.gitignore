@@ -2,3 +2,7 @@
 .venv
 srv-string.txt
 atlas-credentials.env
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.test-artifacts/

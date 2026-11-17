@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import DateTime, String
+from sqlalchemy import Boolean, DateTime, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -44,4 +44,5 @@ class User(Base):
         Boolean,
         nullable=False,
         default=False,
+        server_default="0",
     )
