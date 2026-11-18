@@ -8,7 +8,6 @@ updateMovieState,
 const EMPTY_STATE = {
 favorite: false,
 watched: false,
-rating: null,
 };
 
 function MovieControls({
@@ -54,10 +53,6 @@ useEffect(() => {
             setMovieState({
                 favorite: Boolean(state.favorite),
                 watched: Boolean(state.watched),
-                rating:
-                    state.rating === null
-                        ? null
-                        : Number(state.rating),
             });
 
         } catch (loadError) {
@@ -115,18 +110,8 @@ const saveState = async (changes) => {
 
 
         setMovieState({
-            favorite: Boolean(
-                updatedState.favorite
-            ),
-            watched: Boolean(
-                updatedState.watched
-            ),
-            rating:
-                updatedState.rating === null
-                    ? null
-                    : Number(
-                        updatedState.rating
-                    ),
+            favorite: Boolean(updatedState.favorite),
+            watched: Boolean(updatedState.watched),
         });
 
     } catch (saveError) {
@@ -156,19 +141,6 @@ const toggleFavorite = () => {
 const toggleWatched = () => {
     saveState({
         watched: !movieState.watched,
-    });
-};
-
-
-const handleRatingChange = (event) => {
-    const value = event.target.value;
-
-
-    saveState({
-        rating:
-            value === ""
-                ? null
-                : Number(value),
     });
 };
 
@@ -204,38 +176,6 @@ return (
                 ? "Assistido"
                 : "Marcar como assistido"}
         </button>
-
-
-        <label htmlFor="user-rating">
-            Sua Avaliação:
-        </label>
-
-
-        <select
-            id="user-rating"
-            value={
-                movieState.rating === null
-                    ? ""
-                    : movieState.rating
-            }
-            onChange={handleRatingChange}
-            disabled={controlsDisabled}
-        >
-            <option value="">
-                Sem Avaliação
-            </option>
-
-            <option value="1">1</option>
-            <option value="2">2</option>
-            <option value="3">3</option>
-            <option value="4">4</option>
-            <option value="5">5</option>
-            <option value="6">6</option>
-            <option value="7">7</option>
-            <option value="8">8</option>
-            <option value="9">9</option>
-            <option value="10">10</option>
-        </select>
 
 
         {isLoading && (

@@ -21,7 +21,7 @@ Com a venv existente ativada, no diretório `backend`:
 
 ```powershell
 python -m app.cli --help
-python -m app.cli create-superuser --username administrador --email admin@example.com
+python -m app.cli create-superuser --username administrador --email admin@email.com
 python -m app.cli promote-superuser --username EXISTENTE
 ```
 

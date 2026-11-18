@@ -7,6 +7,7 @@ getMovieCredits,
 
 import CastList from "./CastList.jsx";
 import MovieControls from "./MovieControls.jsx";
+import MovieReviews from "./MovieReviews.jsx";
 
 const IMAGE_BASE_URL =
 "https://image.tmdb.org/t/p/w500";
@@ -64,142 +65,76 @@ return Array.from(
 function MovieDetails({
 movie,
 currentUser,
+onLogin,
 onBack,
 }) {
+const movieId = movie?.id;
 const [movieDetails, setMovieDetails] = useState(null);
 const [credits, setCredits] = useState([]);
-const [isLoading, setIsLoading] = useState(false);
+const [isLoading, setIsLoading] = useState(true);
 const [error, setError] = useState("");
+const [creditsError, setCreditsError] = useState(false);
 
 
 useEffect(() => {
-    if (!movie?.id) {
-        setMovieDetails(null);
-        setCredits([]);
-        setError("");
-        return;
-    }
-
+    if (!movieId) return;
     let cancelled = false;
 
-    const loadMovie = async () => {
-        setIsLoading(true);
-        setError("");
+    setIsLoading(true);
+    setMovieDetails(null);
+    setCredits([]);
+    setError("");
+    setCreditsError(false);
 
-        try {
-            const [
-                details,
-                creditsData,
-            ] = await Promise.all([
-                getMovie(movie.id),
-                getMovieCredits(movie.id),
-            ]);
-
-            if (cancelled) {
-                return;
-            }
-
-            setMovieDetails(details);
-
-            setCredits(
-                Array.isArray(creditsData.cast)
-                    ? creditsData.cast.slice(0, 10)
-                    : []
-            );
-
-        } catch (loadError) {
-            if (cancelled) {
-                return;
-            }
-
-            console.error(
-                "Failed to load movie details:",
-                loadError
-            );
-
-            setMovieDetails(null);
-            setCredits([]);
-
-            setError(
-                loadError.message ||
-                "Falha ao carregar os detalhes do filme."
-            );
-
-        } finally {
+    getMovie(movieId)
+        .then((details) => {
+            if (!cancelled) setMovieDetails(details);
+        })
+        .catch((loadError) => {
             if (!cancelled) {
-                setIsLoading(false);
+                setError(loadError.message || "Falha ao carregar os detalhes do filme.");
             }
-        }
-    };
+        })
+        .finally(() => {
+            if (!cancelled) setIsLoading(false);
+        });
 
-
-    loadMovie();
-
+    getMovieCredits(movieId)
+        .then(({ cast }) => {
+            if (!cancelled) setCredits(Array.isArray(cast) ? cast.slice(0, 10) : []);
+        })
+        .catch(() => {
+            if (!cancelled) setCreditsError(true);
+        });
 
     return () => {
         cancelled = true;
     };
-}, [movie]);
+}, [movieId]);
 
 
-if (!movie) {
-    return null;
-}
+if (!movie) return null;
 
 
-if (isLoading) {
-    return (
-        <section className="movie-container">
-            <p>Carregando filme...</p>
-        </section>
-    );
-}
-
-
-if (error) {
-    return (
-        <section className="movie-container">
-
-            <p className="search-error">
-                {error}
-            </p>
-
-            <button
-                type="button"
-                onClick={onBack}
-            >
-                Voltar
-            </button>
-
-        </section>
-    );
-}
-
-
-if (!movieDetails) {
-    return null;
-}
-
-
-const posterUrl = movieDetails.poster_path
+const posterUrl = movieDetails?.poster_path
     ? `${IMAGE_BASE_URL}${movieDetails.poster_path}`
     : "/images/gray background.jpg";
 
 
-const releaseYear = movieDetails.release_date
+const releaseYear = movieDetails?.release_date
     ? movieDetails.release_date.substring(0, 4)
     : "";
 
 
 const genres = Array.isArray(
-    movieDetails.genres
+    movieDetails?.genres
 )
     ? movieDetails.genres.slice(0, 5)
     : [];
 
 
 const tmdbRating = Number(
-    movieDetails.vote_average
+    movieDetails?.vote_average
 );
 
 
@@ -214,8 +149,10 @@ return (
             Voltar
         </button>
 
+        {isLoading && <p role="status">Carregando filme...</p>}
+        {error && <p className="search-error" role="alert">{error}</p>}
 
-        <div className="movie-details-container">
+        {movieDetails && <div className="movie-details-container">
 
             <div className="movie-image">
 
@@ -328,10 +265,15 @@ return (
 
             </div>
 
-        </div>
+        </div>}
 
+        <MovieReviews
+            movieId={movieId}
+            currentUser={currentUser}
+            onLogin={onLogin}
+        />
 
-        <CastList cast={credits} />
+        {creditsError ? <p>Não foi possível carregar o elenco.</p> : <CastList cast={credits} />}
 
     </section>
 );

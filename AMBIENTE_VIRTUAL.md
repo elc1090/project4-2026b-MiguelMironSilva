@@ -62,4 +62,4 @@ Pare o servidor com **Ctrl+C** e saia do ambiente com `deactivate`. Não é nece
 
 **Se o PowerShell bloquear a ativação:** não é preciso alterar a política de execução. Substitua `python` nos comandos acima por `.\.venv\Scripts\python.exe`; isso usa o ambiente virtual sem ativá-lo.
 
-**Testes opcionais:** com o ambiente ativo, execute `python -m pip install -r requirements-test.txt` e depois `python -m pytest -q`.
+**Testes opcionais:** os testes e o arquivo `requirements-test.txt` são locais e não vêm em um clone novo. Se estiverem disponíveis, com o ambiente ativo, execute `python -m pip install -r requirements-test.txt` e depois `python -m pytest -q`.

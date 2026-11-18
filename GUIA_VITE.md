@@ -65,10 +65,11 @@ Pare o servidor com **Ctrl+C**. Não há comando `deactivate` para o frontend.
 
 ## 6. Testes e build opcionais
 
-Dentro de `frontend`:
+Os testes do frontend são locais e não vêm em um clone novo. Se você tiver a suíte local, execute `npm test` dentro de `frontend`.
+
+Para compilar e conferir o resultado, dentro de `frontend`:
 
 ```powershell
-npm test
 npm run build
 npm run preview -- --port 4173 --strictPort
 ```

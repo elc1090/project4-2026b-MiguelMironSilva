@@ -40,6 +40,12 @@ class User(Base):
         cascade="all, delete-orphan",
     )
 
+    reviews: Mapped[list["Review"]] = relationship(
+        back_populates="author",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+    )
+
     is_superuser: Mapped[bool] = mapped_column( #tabela para ver se é superusuário ou não
         Boolean,
         nullable=False,

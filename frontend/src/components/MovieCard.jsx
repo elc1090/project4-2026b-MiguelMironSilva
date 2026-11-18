@@ -20,13 +20,6 @@ if (state?.watched) {
     statusParts.push("Assistido");
 }
 
-if (state?.rating !== null &&
-    state?.rating !== undefined) {
-    statusParts.push(
-        `Sua avaliação: ${state.rating}/10`
-    );
-}
-
 
 return (
     <article

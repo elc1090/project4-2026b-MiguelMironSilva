@@ -722,6 +722,92 @@ color: var(--secondary-text-color);
 }
 
 /* ============================================================
+RESENHAS DO FILME
+============================================================ */
+
+.movie-reviews {
+    display: grid;
+    gap: 1rem;
+    margin: 2rem 0;
+    max-width: 52rem;
+}
+
+.movie-reviews h2 {
+    color: var(--primary-text-color);
+}
+
+.movie-review-list {
+    display: grid;
+    gap: .75rem;
+    list-style: none;
+}
+
+.movie-review-list article,
+.movie-review-form {
+    display: grid;
+    gap: .65rem;
+    padding: 1rem;
+    border: 1px solid var(--primary-border-color);
+    border-radius: 8px;
+    background: var(--movie-search-bg-color);
+    overflow-wrap: anywhere;
+}
+
+.movie-review-dates {
+    font-size: .9rem;
+}
+
+.movie-review-text {
+    white-space: pre-wrap;
+}
+
+.movie-review-form textarea,
+.movie-review-form select,
+.movie-reviews button {
+    padding: .5rem .75rem;
+    border: 1px solid var(--primary-border-color);
+    border-radius: 6px;
+    background: var(--movie-search-bg-color);
+    color: inherit;
+    font: inherit;
+}
+
+.movie-review-form textarea,
+.movie-review-form select {
+    width: 100%;
+    resize: vertical;
+}
+
+.movie-reviews button {
+    cursor: pointer;
+}
+
+.movie-reviews button:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.movie-reviews :is(button, textarea, select):focus-visible {
+    outline: 2px solid var(--primary-text-color);
+    outline-offset: 2px;
+}
+
+.movie-reviews [role="alert"] {
+    font-weight: 700;
+}
+
+.movie-review-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: .5rem;
+}
+
+.movie-review-actions p {
+    flex-basis: 100%;
+}
+
+/* ============================================================
 ENREDO
 ============================================================ */
 

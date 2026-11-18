@@ -55,7 +55,6 @@ def get_my_movie_state(
             "tmdb_id": tmdb_id,
             "favorite": False,
             "watched": False,
-            "rating": None,
         }
 
     return movie_state

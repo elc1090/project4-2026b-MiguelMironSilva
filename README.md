@@ -73,6 +73,8 @@ Frontend
 
 ## Referências e créditos
 
+- [Western Reels — projeto de rpklaue](https://github.com/elc1090/project2-2026b-rpklaue): referência para o formulário de resenhas nos detalhes do filme e para o fluxo de criar, editar e excluir. Neste projeto a resenha é um registro público independente da biblioteca pessoal, com uma resenha por usuário e filme.
+
 Substitua este trecho por uma lista bem detalhada de todo material consultado para ajudar no projeto, por exemplo:  URLs de vídeos ou outro material consultado, créditos para colegas que colaboraram, geradores de código, etc.
 - ...
 - ...

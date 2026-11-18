@@ -213,6 +213,41 @@ return parseResponse(response);
 };
 
 // ============================================================
+// RESENHAS DE FILMES
+// ============================================================
+
+const movieReviewsUrl = (tmdbId) =>
+    `${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}/reviews`;
+
+export const getMovieReviews = async (tmdbId, { signal } = {}) => {
+    const response = await fetch(movieReviewsUrl(tmdbId), { signal });
+    return parseResponse(response);
+};
+
+const writeMovieReview = async (url, method, review, signal) => {
+    const headers = getAuthHeaders();
+    if (review !== undefined) headers["Content-Type"] = "application/json";
+
+    const response = await fetch(url, {
+        method,
+        headers,
+        signal,
+        body: review === undefined ? undefined : JSON.stringify(review),
+    });
+    if (method === "DELETE" && response.status === 204) return;
+    return parseResponse(response);
+};
+
+export const createMovieReview = (tmdbId, review, { signal } = {}) =>
+    writeMovieReview(movieReviewsUrl(tmdbId), "POST", review, signal);
+
+export const updateMovieReview = (tmdbId, reviewId, review, { signal } = {}) =>
+    writeMovieReview(`${movieReviewsUrl(tmdbId)}/${encodeURIComponent(reviewId)}`, "PATCH", review, signal);
+
+export const deleteMovieReview = (tmdbId, reviewId, { signal } = {}) =>
+    writeMovieReview(`${movieReviewsUrl(tmdbId)}/${encodeURIComponent(reviewId)}`, "DELETE", undefined, signal);
+
+// ============================================================
 // ESTADO DO FILME DO USUÁRIO
 // ============================================================
 

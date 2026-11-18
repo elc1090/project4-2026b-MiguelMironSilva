@@ -77,7 +77,22 @@ const handleLogin = async (username, password) => {
 
     setCurrentUser(user);
     setShowAuthPanel(false);
-    setCurrentView("search");
+    setCurrentView((view) => view === "details" ? view : "search");
+};
+
+useEffect(() => {
+    if (showAuthPanel) document.getElementById("login-username")?.focus();
+}, [showAuthPanel]);
+
+const handleReviewLogin = () => {
+    if (currentUser) {
+        // A signed-in user only sees the review login action after a 401.
+        ++sessionRevision.current;
+        clearToken();
+        setCurrentUser(null);
+    }
+    setShowAuthPanel(true);
+    if (showAuthPanel) document.querySelector(".auth-panel input")?.focus();
 };
 
 
@@ -192,8 +207,10 @@ return (
         {currentView === "details" &&
             currentMovie && (
                 <MovieDetails
+                    key={currentMovie.id}
                     movie={currentMovie}
                     currentUser={currentUser}
+                    onLogin={handleReviewLogin}
                     onBack={handleBackToSearch}
                 />
             )}

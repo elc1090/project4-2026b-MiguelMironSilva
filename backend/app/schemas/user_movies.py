@@ -1,15 +1,10 @@
 from typing import Optional
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict
 
 
 class MovieStateUpdate(BaseModel):
     favorite: Optional[bool] = None
     watched: Optional[bool] = None
-    rating: Optional[int] = Field(
-        default=None,
-        ge=0,
-        le=10,
-    )
 
 
 class MovieStateResponse(BaseModel):
@@ -18,4 +13,3 @@ class MovieStateResponse(BaseModel):
     tmdb_id: str
     favorite: bool
     watched: bool
-    rating: Optional[int] = None

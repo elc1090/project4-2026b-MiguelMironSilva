@@ -29,15 +29,21 @@ python -m alembic upgrade head
 Remove-Item Env:ALEMBIC_DATABASE_URL
 ```
 
+## Avaliações públicas
+
+A etapa 2 acrescenta a tabela independente de avaliações públicas. A revisão `20261117_03` transfere para ela as notas pessoais já salvas em `user_movies.rating`, mesclando-as às resenhas existentes do mesmo autor e filme, e remove a coluna antiga. Nota e texto passam a pertencer à mesma avaliação; favoritos e assistidos permanecem em `user_movies`.
+
+Antes de atualizar banco existente, pare a API e faça backup consistente. Execute `python -m alembic upgrade head` dentro de `backend` antes de reiniciar. O downgrade da revisão 3 devolve as notas à estrutura anterior e descarta avaliações que eram apenas nota; o downgrade seguinte da revisão 2 remove a tabela de resenhas. Faça backup antes de qualquer downgrade.
+
 ## Testes
 
-A partir de `backend`, instale as dependências de desenvolvimento e execute a suíte:
+A suíte e o arquivo `requirements-test.txt` são locais e não vêm em um clone novo. Quando estiverem disponíveis, a partir de `backend`, instale as dependências de desenvolvimento e execute a suíte:
 
 ```powershell
 python -m pip install -r requirements-test.txt
 python -m pytest -q
 ```
 
-Os testes de API usam SQLite em memória, credenciais fictícias e bloqueiam chamadas HTTP externas. Os testes de migração executam o Alembic em arquivos SQLite temporários: cobrem banco vazio, banco legado com dados, adoção do schema atual, repetição do upgrade e rejeição de schemas incompatíveis. Nenhum teste aplica migrações ao banco real do projeto.
+Os testes de API usam bancos SQLite descartáveis e credenciais fictícias. Os testes de migração usam arquivos SQLite temporários. Nenhum teste aplica migrações ao banco real do projeto.
 
-As regras de autorização e exclusão planejadas estão em [REGRAS_DE_ACESSO.md](<REGRAS_DE_ACESSO.md>). Ainda não há endpoints administrativos ou de resenhas; seus testes de permissão serão acrescentados nas próximas etapas.
+As regras de autorização e exclusão estão em [REGRAS_DE_ACESSO.md](<REGRAS_DE_ACESSO.md>). A edição e a exclusão de resenhas pelo autor já fazem parte da API; exclusões administrativas ainda não estão disponíveis.

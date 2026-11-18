@@ -45,20 +45,17 @@ def update_movie_state(
             tmdb_id=tmdb_id,
             favorite=updates.get("favorite", False),
             watched=updates.get("watched", False),
-            rating=updates.get("rating"),
         )
 
         # Don't create an empty record.
         if (
             not movie_state.favorite
             and not movie_state.watched
-            and movie_state.rating is None
         ):
             return {
                 "tmdb_id": tmdb_id,
                 "favorite": False,
                 "watched": False,
-                "rating": None,
             }
 
         db.add(movie_state)
@@ -72,7 +69,6 @@ def update_movie_state(
         if (
             not movie_state.favorite
             and not movie_state.watched
-            and movie_state.rating is None
         ):
             db.delete(movie_state)
             db.commit()
@@ -81,7 +77,6 @@ def update_movie_state(
                 "tmdb_id": tmdb_id,
                 "favorite": False,
                 "watched": False,
-                "rating": None,
             }
 
     db.commit()

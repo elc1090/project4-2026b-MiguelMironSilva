@@ -1,5 +1,4 @@
-from typing import Optional
-from sqlalchemy import ForeignKey, Integer, String, UniqueConstraint
+from sqlalchemy import ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -30,11 +29,6 @@ class UserMovie(Base):
     watched: Mapped[bool] = mapped_column(
         nullable=False,
         default=False,
-    )
-
-    rating: Mapped[Optional[int]] = mapped_column(
-        Integer,
-        nullable=True,
     )
 
     user: Mapped["User"] = relationship(
