@@ -41,7 +41,9 @@ function reviewErrorMessage(error, operation) {
         case 401:
             return "Sua sessão expirou. Entre novamente para continuar.";
         case 403:
-            return "Você não tem permissão para alterar esta avaliação.";
+            return operation === "delete"
+                ? "Você não tem permissão para excluir esta avaliação."
+                : "Você não tem permissão para alterar esta avaliação.";
         case 404:
             return operation === "create"
                 ? "Filme não encontrado para publicação da avaliação."
@@ -55,15 +57,17 @@ function reviewErrorMessage(error, operation) {
     }
 }
 
-function ReviewsForSession({ movieId, userId, onLogin }) {
+function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
     const titleId = useId();
     const textId = useId();
     const ratingId = useId();
+    const deleteWarningId = useId();
     const [list, setList] = useState(LOADING);
     const [loadAttempt, setLoadAttempt] = useState(0);
     const [draft, setDraft] = useState("");
     const [ratingDraft, setRatingDraft] = useState("");
-    const [mode, setMode] = useState(null);
+    const [isEditing, setIsEditing] = useState(false);
+    const [deleteTargetId, setDeleteTargetId] = useState(null);
     const [notice, setNotice] = useState(null);
     const [pending, setPending] = useState(null);
     const activeWrite = useRef(null);
@@ -108,19 +112,26 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
     }
 
     function resetForm() {
-        setMode(null);
+        setIsEditing(false);
         setDraft("");
         setRatingDraft("");
     }
 
-    async function writeReview(operation) {
+    async function writeReview(operation, reviewId) {
         if (userId == null || sessionExpired || !list.reviews || activeWrite.current) return;
-        if (operation === "create" ? ownReview : !ownReview) return;
-        if (operation !== "delete" && length > TEXT_LIMIT) {
+        const isDelete = operation === "delete";
+        const deleteTarget = isDelete && list.reviews.find((review) => review.id === reviewId);
+        const deletesOwnReview = isDelete && deleteTarget?.author.id === userId;
+        if (isDelete) {
+            if (!deleteTarget || reviewId !== deleteTargetId || (!deletesOwnReview && !isSuperuser)) return;
+        } else if (operation === "create" ? ownReview : !ownReview) {
+            return;
+        }
+        if (!isDelete && length > TEXT_LIMIT) {
             setNotice({ error: true, text: "A resenha pode ter até 2.000 caracteres." });
             return;
         }
-        if (operation !== "delete" && length === 0 && ratingDraft === "") {
+        if (!isDelete && length === 0 && ratingDraft === "") {
             setNotice({ error: true, text: "Informe uma nota ou escreva uma resenha." });
             return;
         }
@@ -130,16 +141,17 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
         const token = getToken();
         const isCurrent = () => !signal.aborted && getToken() === token;
         activeWrite.current = controller;
-        setPending(operation);
+        setPending(isDelete ? `Excluindo avaliação de ${deleteTarget.author.username}...` : "Salvando avaliação...");
         setNotice(null);
 
         try {
-            if (operation === "delete") {
-                await deleteMovieReview(movieId, ownReview.id, { signal });
+            if (isDelete) {
+                await deleteMovieReview(movieId, reviewId, { signal });
                 if (!isCurrent()) return;
                 setList(({ reviews, error }) => ({
-                    reviews: reviews.filter((review) => review.id !== ownReview.id), error,
+                    reviews: reviews.filter((review) => review.id !== reviewId), error,
                 }));
+                setDeleteTargetId(null);
             } else {
                 const reviewData = {
                     text: trimmed || null,
@@ -157,7 +169,7 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
                 }));
             }
 
-            resetForm();
+            if (!isDelete || deletesOwnReview) resetForm();
             setNotice({ text: {
                 create: "Avaliação publicada.",
                 edit: "Avaliação atualizada.",
@@ -166,8 +178,9 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
         } catch (error) {
             if (!isCurrent()) return;
             setNotice({ error: true, status: error.status, text: reviewErrorMessage(error, operation) });
+            if ([401, 403, 404, 409].includes(error.status)) setDeleteTargetId(null);
             if ([403, 404, 409].includes(error.status)) {
-                resetForm();
+                if (!isDelete || deletesOwnReview) resetForm();
                 retryList();
             }
         } finally {
@@ -179,7 +192,7 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
     }
 
     const canWrite = userId != null && !sessionExpired;
-    const showForm = list.reviews && canWrite && (!ownReview || mode === "edit");
+    const showForm = list.reviews && canWrite && (!ownReview || isEditing);
 
     return (
         <section className="movie-reviews" aria-labelledby={titleId}>
@@ -198,9 +211,7 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
                     )}
                 </p>
             )}
-            {pending && (
-                <p role="status">{pending === "delete" ? "Excluindo avaliação..." : "Salvando avaliação..."}</p>
-            )}
+            {pending && <p role="status">{pending}</p>}
             {list.error ? (
                 <div>
                     <p role="alert">{list.error}</p>
@@ -212,38 +223,51 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
                 <p>Nenhuma avaliação publicada.</p>
             ) : (
                 <ul className="movie-review-list">
-                    {list.reviews.map((review) => (
-                        <li key={review.id}>
-                            <article>
-                                <ReviewContent review={review} />
-                                {canWrite && review.id === ownReview?.id && mode == null && (
-                                    <div className="movie-review-actions">
-                                        <button type="button" onClick={() => {
-                                            setDraft(ownReview.text ?? "");
-                                            setRatingDraft(ownReview.rating == null ? "" : String(ownReview.rating));
-                                            setNotice(null);
-                                            setMode("edit");
-                                        }}>Editar avaliação</button>
-                                        <button type="button" onClick={() => {
-                                            setNotice(null);
-                                            setMode("delete");
-                                        }}>Excluir avaliação</button>
-                                    </div>
-                                )}
-                                {canWrite && review.id === ownReview?.id && mode === "delete" && (
-                                    <div className="movie-review-actions">
-                                        <p>Excluir sua avaliação? Esta ação não pode ser desfeita.</p>
-                                        <button type="button" disabled={!!pending}
-                                            onClick={() => writeReview("delete")}>Confirmar exclusão</button>
-                                        <button type="button" autoFocus disabled={!!pending} onClick={() => {
-                                            resetForm();
-                                            setNotice(null);
-                                        }}>Cancelar</button>
-                                    </div>
-                                )}
-                            </article>
-                        </li>
-                    ))}
+                    {list.reviews.map((review) => {
+                        const isOwn = review.id === ownReview?.id;
+                        const canEdit = canWrite && isOwn && !isEditing;
+                        const canDelete = canWrite && (isOwn ? !isEditing : isSuperuser);
+                        const confirmingDelete = canDelete && review.id === deleteTargetId;
+
+                        return (
+                            <li key={review.id}>
+                                <article>
+                                    <ReviewContent review={review} />
+                                    {confirmingDelete ? (
+                                        <div className="movie-review-actions">
+                                            <p id={deleteWarningId}>
+                                                Excluir a avaliação de <strong>{review.author.username}</strong>?
+                                                A nota e o texto, se presentes, serão removidos. Esta ação não pode ser desfeita.
+                                            </p>
+                                            <button type="button" disabled={!!pending} aria-describedby={deleteWarningId}
+                                                onClick={() => writeReview("delete", review.id)}>Confirmar exclusão</button>
+                                            <button type="button" autoFocus disabled={!!pending} onClick={() => {
+                                                setDeleteTargetId(null);
+                                                setNotice(null);
+                                            }}>Cancelar</button>
+                                        </div>
+                                    ) : (canEdit || canDelete) && (
+                                        <div className="movie-review-actions">
+                                            {canEdit && (
+                                                <button type="button" disabled={!!pending} onClick={() => {
+                                                    setDraft(review.text ?? "");
+                                                    setRatingDraft(review.rating == null ? "" : String(review.rating));
+                                                    setNotice(null);
+                                                    setIsEditing(true);
+                                                }}>Editar avaliação</button>
+                                            )}
+                                            {canDelete && (
+                                                <button type="button" disabled={!!pending} onClick={() => {
+                                                    setNotice(null);
+                                                    setDeleteTargetId(review.id);
+                                                }}>{isOwn ? "Excluir avaliação" : "Excluir avaliação (moderação)"}</button>
+                                            )}
+                                        </div>
+                                    )}
+                                </article>
+                            </li>
+                        );
+                    })}
                 </ul>
             )}
             {showForm && (
@@ -282,9 +306,11 @@ function ReviewsForSession({ movieId, userId, onLogin }) {
 }
 
 export default function MovieReviews({ movieId, currentUser, onLogin }) {
-    // A navigation or login/logout must discard old lists, drafts and mutations.
+    // Discard old drafts, confirmations and mutations when the film or session scope changes.
     if (!movieId) return null;
     const userId = currentUser?.id;
-    const scope = JSON.stringify([movieId, userId]);
-    return <ReviewsForSession key={scope} movieId={movieId} userId={userId} onLogin={onLogin} />;
+    const isSuperuser = currentUser?.is_superuser === true;
+    const scope = JSON.stringify([movieId, userId, isSuperuser]);
+    return <ReviewsForSession key={scope} movieId={movieId} userId={userId}
+        isSuperuser={isSuperuser} onLogin={onLogin} />;
 }

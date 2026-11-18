@@ -37,7 +37,9 @@ Sem ativação, em Windows, substitua `python` por `.\.venv\Scripts\python.exe`.
 
 Após criar ou promover a conta, faça login normalmente no aplicativo. O cabeçalho exibirá o selo **Superusuário** e o botão **Administração**. A área administrativa confirma o acesso no servidor antes de mostrar a identidade da conta. Se a sessão já estava aberta durante a promoção, atualize a página ou entre novamente para atualizar o papel exibido.
 
-Uma resposta `401` solicita novo login; `403` remove a identificação administrativa obsoleta e atualiza a sessão. O backend continua sendo a autoridade, mesmo que o estado local da interface seja adulterado. As operações de moderação, resenhas e exclusões serão implementadas nas próximas etapas.
+Uma resposta `401` solicita novo login; `403` remove a identificação administrativa obsoleta e atualiza a sessão. O backend continua sendo a autoridade, mesmo que o estado local da interface seja adulterado.
+
+Na etapa 3, a moderação fica nos detalhes de cada filme: o superusuário pode remover uma avaliação de terceiros após confirmar, mas não pode editar a nota ou o texto de outra pessoa. A exclusão de contas ainda não está disponível.
 
 A CLI local não depende de credenciais TMDB/JWT para provisionar a conta ou exibir ajuda. Já a API HTTP e o login continuam exigindo a configuração habitual do ambiente.
 

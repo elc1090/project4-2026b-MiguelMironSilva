@@ -46,4 +46,4 @@ python -m pytest -q
 
 Os testes de API usam bancos SQLite descartáveis e credenciais fictícias. Os testes de migração usam arquivos SQLite temporários. Nenhum teste aplica migrações ao banco real do projeto.
 
-As regras de autorização e exclusão estão em [REGRAS_DE_ACESSO.md](<REGRAS_DE_ACESSO.md>). A edição e a exclusão de resenhas pelo autor já fazem parte da API; exclusões administrativas ainda não estão disponíveis.
+As regras de autorização e exclusão estão em [REGRAS_DE_ACESSO.md](<REGRAS_DE_ACESSO.md>). A etapa 3 permite que superusuários excluam resenhas de terceiros sem alterar o esquema do banco; não há nova migração.

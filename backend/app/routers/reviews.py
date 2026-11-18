@@ -21,12 +21,10 @@ Database = Annotated[Session, Depends(get_db)]
 CurrentUser = Annotated[User, Depends(get_current_user)]
 
 
-def _owned_review(db: Session, tmdb_id: int, review_id: int, user_id: int) -> Review:
+def _find_review(db: Session, tmdb_id: int, review_id: int) -> Review:
     review = db.scalar(select(Review).where(Review.id == review_id, Review.tmdb_id == tmdb_id))
     if review is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Resenha não encontrada")
-    if review.user_id != user_id:
-        raise HTTPException(status.HTTP_403_FORBIDDEN, "Apenas o autor pode alterar esta resenha")
     return review
 
 
@@ -65,7 +63,9 @@ def create_review(tmdb_id: SQLiteId, data: ReviewWrite, db: Database, current_us
 def update_review(
     tmdb_id: SQLiteId, review_id: SQLiteId, data: ReviewWrite, db: Database, current_user: CurrentUser
 ):
-    review = _owned_review(db, tmdb_id, review_id, current_user.id)
+    review = _find_review(db, tmdb_id, review_id)
+    if review.user_id != current_user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Apenas o autor pode editar esta resenha")
     if not data.model_fields_set:
         raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT, "Informe a nota e/ou o texto a atualizar")
     new_text = data.text if "text" in data.model_fields_set else review.text
@@ -81,7 +81,10 @@ def update_review(
 
 @router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_review(tmdb_id: SQLiteId, review_id: SQLiteId, db: Database, current_user: CurrentUser):
-    review = _owned_review(db, tmdb_id, review_id, current_user.id)
+    """Remove a resenha (nota e texto) como autor ou superusuário."""
+    review = _find_review(db, tmdb_id, review_id)
+    if review.user_id != current_user.id and not current_user.is_superuser:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Apenas o autor ou um superusuário pode excluir esta resenha")
     db.delete(review)
     db.commit()
     return Response(status_code=status.HTTP_204_NO_CONTENT)
