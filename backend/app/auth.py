@@ -15,16 +15,18 @@ oauth2_scheme = OAuth2PasswordBearer(
 )
 
 
-def get_current_user(
-    token: Annotated[str, Depends(oauth2_scheme)],
-    db: Annotated[Session, Depends(get_db)],
-):
-    credentials_exception = HTTPException(
+def invalid_credentials() -> HTTPException:
+    return HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Credenciais inválidas",
         headers={"WWW-Authenticate": "Bearer"},
     )
 
+
+def get_current_user(
+    token: Annotated[str, Depends(oauth2_scheme)],
+    db: Annotated[Session, Depends(get_db)],
+):
     try:
         payload = jwt.decode(
             token,
@@ -35,24 +37,24 @@ def get_current_user(
         user_id = payload.get("sub")
 
         if user_id is None:
-            raise credentials_exception
+            raise invalid_credentials()
 
         try:
             user_id = int(user_id)
         except (TypeError, ValueError):
-            raise credentials_exception
+            raise invalid_credentials()
 
         user = db.scalar(
             select(User).where(User.id == user_id)
         )
 
         if user is None:
-            raise credentials_exception
+            raise invalid_credentials()
 
         return user
 
     except InvalidTokenError:
-        raise credentials_exception
+        raise invalid_credentials()
 
 
 def get_current_superuser(

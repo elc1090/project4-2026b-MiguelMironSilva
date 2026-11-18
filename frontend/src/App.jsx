@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
 clearToken,
 getCurrentUser,
+getToken,
 login,
 logout,
 register,
@@ -34,14 +35,15 @@ const handleAdminAccessDenied = useCallback(async (status) => {
         setCurrentUser(null);
         return;
     }
+    const token = getToken();
     try {
         const user = await getCurrentUser();
-        if (revision === sessionRevision.current) {
-            // /admin/me denial takes precedence over an inconsistent/stale /auth/me.
+        if (revision === sessionRevision.current && getToken() === token) {
+            // An admin endpoint's denial takes precedence over /auth/me for this session.
             setCurrentUser({ ...user, is_superuser: false });
         }
     } catch (error) {
-        if (revision !== sessionRevision.current) return;
+        if (revision !== sessionRevision.current || getToken() !== token) return;
         if (error.status === 401) {
             clearToken();
             setCurrentUser(null);

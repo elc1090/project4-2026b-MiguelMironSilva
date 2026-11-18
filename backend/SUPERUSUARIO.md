@@ -1,8 +1,8 @@
-# Superusuário — operação e acesso na etapa 1
+# Superusuário — operação e acesso
 
 ## Escopo e autorização
 
-A coluna `User.is_superuser` e a migração da etapa 0 são reutilizadas, sem alterar modelos ou criar migrações. Cadastro público ignora campos extras (incluindo `is_superuser`, `role` e `id`) e cria sempre usuário comum. Cadastro e `GET /api/auth/me` incluem `is_superuser: bool` no `UserResponse`, sem senha/hash.
+O papel administrativo usa a coluna `User.is_superuser` criada na etapa 0. Cadastro público ignora campos extras (incluindo `is_superuser`, `role` e `id`) e cria sempre usuário comum. Cadastro e `GET /api/auth/me` incluem `is_superuser: bool` no `UserResponse`, sem senha/hash.
 
 `GET /api/admin/me` usa `get_current_superuser`, encadeado a `get_current_user`: anônimo/token inválido/usuário removido recebe 401, comum recebe 403, superusuário recebe 200 e `UserResponse`. O papel é lido do usuário atual no banco a cada requisição; claims JWT ou dados frontend não concedem privilégios. Promoção/revogação no banco vale já na próxima requisição com o mesmo token. Não existe endpoint público de promoção nem checkbox administrativo.
 
@@ -39,7 +39,9 @@ Após criar ou promover a conta, faça login normalmente no aplicativo. O cabeç
 
 Uma resposta `401` solicita novo login; `403` remove a identificação administrativa obsoleta e atualiza a sessão. O backend continua sendo a autoridade, mesmo que o estado local da interface seja adulterado.
 
-Na etapa 3, a moderação fica nos detalhes de cada filme: o superusuário pode remover uma avaliação de terceiros após confirmar, mas não pode editar a nota ou o texto de outra pessoa. A exclusão de contas ainda não está disponível.
+A moderação de avaliações fica nos detalhes de cada filme: o superusuário pode remover uma avaliação de terceiros após confirmar, mas não pode editar a nota ou o texto de outra pessoa.
+
+Para excluir uma conta, abra **Administração**, confira o nome e o papel da conta na lista e confirme a exclusão. A conta, suas avaliações (nota e texto), favoritos e assistidos são removidos definitivamente da base em uso. Não é possível excluir a própria conta; a exclusão de outro superusuário requer uma segunda conta administrativa com acesso ao painel. Consulte as [regras de acesso](<REGRAS_DE_ACESSO.md>) e teste o fluxo primeiro com uma conta descartável.
 
 A CLI local não depende de credenciais TMDB/JWT para provisionar a conta ou exibir ajuda. Já a API HTTP e o login continuam exigindo a configuração habitual do ambiente.
 

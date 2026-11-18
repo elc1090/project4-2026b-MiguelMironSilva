@@ -35,6 +35,12 @@ A etapa 2 acrescenta a tabela independente de avaliações públicas. A revisão
 
 Antes de atualizar banco existente, pare a API e faça backup consistente. Execute `python -m alembic upgrade head` dentro de `backend` antes de reiniciar. O downgrade da revisão 3 devolve as notas à estrutura anterior e descarta avaliações que eram apenas nota; o downgrade seguinte da revisão 2 remove a tabela de resenhas. Faça backup antes de qualquer downgrade.
 
+## Exclusão de contas
+
+A [revisão `20261118_04`](<alembic/versions/20261118_04_non_reusable_user_ids.py>) torna os identificadores de usuários não reutilizáveis no SQLite. Isso impede que um token ou uma referência administrativa antigos apontem para uma conta nova após a exclusão de outra. Antes de atualizar, pare a API, faça um backup consistente e execute `python -m alembic upgrade head` no diretório `backend`. As contas existentes preservam seus identificadores, e os tokens não expirados dessas contas não precisam ser trocados apenas por causa da migração.
+
+Esta revisão não oferece downgrade automático: desfazer a proteção poderia reintroduzir reutilização de identificadores já excluídos. Se precisar restaurar um backup anterior, revise as exclusões feitas desde a cópia e invalide as sessões antigas antes de reabrir a aplicação.
+
 ## Testes
 
 A suíte e o arquivo `requirements-test.txt` são locais e não vêm em um clone novo. Quando estiverem disponíveis, a partir de `backend`, instale as dependências de desenvolvimento e execute a suíte:

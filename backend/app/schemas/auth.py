@@ -14,11 +14,14 @@ class UserCreate(BaseModel):
     def strip_identity(cls, value):
         return value.strip() if isinstance(value, str) else value
 
-class UserResponse(BaseModel):
+class AdminUserResponse(BaseModel):
     id: str
     username: str
-    email: str
     is_superuser: bool
+
+
+class UserResponse(AdminUserResponse):
+    email: str
 
 class LoginRequest(BaseModel):
     identifier: str

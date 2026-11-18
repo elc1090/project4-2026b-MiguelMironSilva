@@ -164,11 +164,30 @@ return parseResponse(response);
 
 };
 
-export const getAdminIdentity = async () => {
+export const getAdminIdentity = async ({ signal } = {}) => {
 const response = await fetch(`${API_BASE_URL}/admin/me`, {
     headers: getAuthHeaders(),
+    signal,
 });
 return parseResponse(response);
+};
+
+const adminUsersUrl = `${API_BASE_URL}/admin/users`;
+
+export const getAdminUsers = async ({ signal } = {}) => {
+    const response = await fetch(adminUsersUrl, { headers: getAuthHeaders(), signal });
+    return parseResponse(response);
+};
+
+export const deleteAdminUser = async (userId, { signal } = {}) => {
+    const response = await fetch(`${adminUsersUrl}/${encodeURIComponent(userId)}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+        signal,
+    });
+    if (response.status === 204) return;
+    if (!response.ok) await parseResponse(response);
+    throw new Error("Resposta inesperada ao excluir a conta.");
 };
 
 export const logout = () => {

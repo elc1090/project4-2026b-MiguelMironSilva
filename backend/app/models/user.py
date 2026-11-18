@@ -6,6 +6,8 @@ from app.database import Base
 
 class User(Base):
     __tablename__ = "users"
+    # User IDs are JWT subjects and must not be allocated to a second account.
+    __table_args__ = {"sqlite_autoincrement": True}
 
     id: Mapped[int] = mapped_column( #tabela das ids do usuário
         primary_key=True,
