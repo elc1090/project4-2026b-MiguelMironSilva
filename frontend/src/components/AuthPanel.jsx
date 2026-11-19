@@ -1,5 +1,38 @@
 import { useState } from "react";
 
+function PasswordField({ id, label, onValueChange, error, ...inputProps }) {
+    const [isVisible, setIsVisible] = useState(false);
+    const action = isVisible ? "Ocultar" : "Mostrar";
+    const errorId = `${id}-error`;
+
+    return (
+        <div className="auth-field">
+            <label htmlFor={id}>{label}</label>
+            <div className="auth-password-control">
+                <input
+                    {...inputProps}
+                    id={id}
+                    type={isVisible ? "text" : "password"}
+                    onChange={(event) => onValueChange(event.target.value)}
+                    aria-invalid={error ? true : undefined}
+                    aria-describedby={error ? errorId : undefined}
+                    required
+                />
+                <button
+                    type="button"
+                    className="auth-password-toggle"
+                    aria-controls={id}
+                    aria-label={`${action} ${label.toLowerCase()}`}
+                    onClick={() => setIsVisible((visible) => !visible)}
+                >
+                    {action}
+                </button>
+            </div>
+            {error && <p id={errorId} className="auth-message" role="alert">{error}</p>}
+        </div>
+    );
+}
+
 function AuthPanel({
 onLogin,
 onRegister,
@@ -13,6 +46,8 @@ const [loginPassword, setLoginPassword] = useState("");
 const [registerUsername, setRegisterUsername] = useState("");
 const [registerEmail, setRegisterEmail] = useState("");
 const [registerPassword, setRegisterPassword] = useState("");
+const [registerPasswordConfirmation, setRegisterPasswordConfirmation] = useState("");
+const [passwordMismatch, setPasswordMismatch] = useState(false);
 
 const [message, setMessage] = useState("");
 const [isSubmitting, setIsSubmitting] = useState(false);
@@ -21,6 +56,7 @@ const [isSubmitting, setIsSubmitting] = useState(false);
 const switchToLogin = () => {
     setMode("login");
     setMessage("");
+    setPasswordMismatch(false);
 };
 
 
@@ -60,6 +96,12 @@ const handleRegister = async (event) => {
     event.preventDefault();
 
     setMessage("");
+    if (registerPassword !== registerPasswordConfirmation) {
+        setPasswordMismatch(true);
+        return;
+    }
+
+    setPasswordMismatch(false);
     setIsSubmitting(true);
 
     try {
@@ -76,6 +118,7 @@ const handleRegister = async (event) => {
         setRegisterUsername("");
         setRegisterEmail("");
         setRegisterPassword("");
+        setRegisterPasswordConfirmation("");
 
         setMode("login");
 
@@ -132,7 +175,7 @@ return (
 
 
             {mode === "login" ? (
-                <form onSubmit={handleLogin}>
+                <form key="login" onSubmit={handleLogin}>
 
                     <div className="auth-field">
 
@@ -156,26 +199,13 @@ return (
                     </div>
 
 
-                    <div className="auth-field">
-
-                        <label htmlFor="login-password">
-                            Senha
-                        </label>
-
-                        <input
-                            id="login-password"
-                            type="password"
-                            autoComplete="current-password"
-                            value={loginPassword}
-                            onChange={(event) =>
-                                setLoginPassword(
-                                    event.target.value
-                                )
-                            }
-                            required
-                        />
-
-                    </div>
+                    <PasswordField
+                        id="login-password"
+                        label="Senha"
+                        autoComplete="current-password"
+                        value={loginPassword}
+                        onValueChange={setLoginPassword}
+                    />
 
 
                     <button
@@ -191,7 +221,7 @@ return (
 
             ) : (
 
-                <form onSubmit={handleRegister}>
+                <form key="register" onSubmit={handleRegister}>
 
                     <div className="auth-field">
 
@@ -239,28 +269,30 @@ return (
                     </div>
 
 
-                    <div className="auth-field">
+                    <PasswordField
+                        id="register-password"
+                        label="Senha"
+                        autoComplete="new-password"
+                        minLength={8}
+                        maxLength={128}
+                        value={registerPassword}
+                        onValueChange={(value) => {
+                            setRegisterPassword(value);
+                            setPasswordMismatch(false);
+                        }}
+                    />
 
-                        <label htmlFor="register-password">
-                            Senha
-                        </label>
-
-                        <input
-                            id="register-password"
-                            type="password"
-                            autoComplete="new-password"
-                            minLength={8}
-                            maxLength={128}
-                            value={registerPassword}
-                            onChange={(event) =>
-                                setRegisterPassword(
-                                    event.target.value
-                                )
-                            }
-                            required
-                        />
-
-                    </div>
+                    <PasswordField
+                        id="register-password-confirmation"
+                        label="Confirmação de senha"
+                        autoComplete="new-password"
+                        value={registerPasswordConfirmation}
+                        onValueChange={(value) => {
+                            setRegisterPasswordConfirmation(value);
+                            setPasswordMismatch(false);
+                        }}
+                        error={passwordMismatch ? "As senhas não coincidem." : undefined}
+                    />
 
 
                     <button

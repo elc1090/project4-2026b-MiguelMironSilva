@@ -8,7 +8,9 @@ import {
 } from "../services/api.js";
 
 const TEXT_LIMIT = 2000;
+const REVIEW_RATINGS = Array.from({ length: 10 }, (_, index) => index + 1);
 const LOADING = { reviews: null, error: "" };
+const ratingFormatter = new Intl.NumberFormat("pt-BR", { maximumFractionDigits: 2 });
 const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
     dateStyle: "short",
     timeStyle: "short",
@@ -18,6 +20,25 @@ function ReviewDate({ value }) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "data não informada";
     return <time dateTime={value}>{dateFormatter.format(date)}</time>;
+}
+
+export function CommunityRating({ reviews }) {
+    let sum = 0;
+    let count = 0;
+    for (const { rating } of reviews) {
+        if (!Number.isInteger(rating) || rating < 1 || rating > 10) continue;
+        sum += rating;
+        count += 1;
+    }
+
+    if (count === 0) return <p>Sem notas da comunidade.</p>;
+    const average = Math.round((sum * 100) / count) / 100;
+    return (
+        <p>
+            <strong>Nota da comunidade: {ratingFormatter.format(average)}/10</strong>
+            {" · "}{count} {count === 1 ? "avaliação com nota" : "avaliações com nota"}
+        </p>
+    );
 }
 
 export function ReviewContent({ review }) {
@@ -197,6 +218,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
     return (
         <section className="movie-reviews" aria-labelledby={titleId}>
             <h2 id={titleId}>Resenhas e avaliações</h2>
+            {list.reviews && <CommunityRating reviews={list.reviews} />}
             {userId == null && (
                 <p>
                     Entre para avaliar ou escrever uma resenha sobre este filme.
@@ -279,7 +301,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
                     <select id={ratingId} value={ratingDraft} disabled={!!pending}
                         onChange={(event) => setRatingDraft(event.target.value)}>
                         <option value="">Sem nota</option>
-                        {Array.from({ length: 11 }, (_, rating) => (
+                        {REVIEW_RATINGS.map((rating) => (
                             <option key={rating} value={rating}>{rating}/10</option>
                         ))}
                     </select>
