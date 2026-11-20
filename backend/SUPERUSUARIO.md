@@ -39,9 +39,13 @@ Após criar ou promover a conta, faça login normalmente no aplicativo. O cabeç
 
 Uma resposta `401` solicita novo login; `403` remove a identificação administrativa obsoleta e atualiza a sessão. O backend continua sendo a autoridade, mesmo que o estado local da interface seja adulterado.
 
+Para promover uma conta pelo painel, abra **Administração → Gerenciar usuários**, clique em **Promover a superusuário** na conta desejada e confirme o nome e as permissões concedidas. Só o papel muda. A CLI continua disponível como alternativa.
+
 A moderação de avaliações fica nos detalhes de cada filme: o superusuário pode remover uma avaliação de terceiros após confirmar, mas não pode editar a nota ou o texto de outra pessoa.
 
-Para excluir uma conta, abra **Administração**, confira o nome e o papel da conta na lista e confirme a exclusão. A conta, suas avaliações (nota e texto), favoritos e assistidos são removidos definitivamente da base em uso. Não é possível excluir a própria conta; a exclusão de outro superusuário requer uma segunda conta administrativa com acesso ao painel. Consulte as [regras de acesso](<REGRAS_DE_ACESSO.md>) e teste o fluxo primeiro com uma conta descartável.
+Para excluir outra conta, abra **Administração**, confira o nome e o papel da conta na lista e confirme a exclusão. A conta, suas avaliações (nota e texto), favoritos e assistidos são removidos definitivamente da base em uso.
+
+Para excluir a própria conta, use **Minha conta** e informe a senha atual. O último superusuário não pode se autoexcluir. Se precisar deixar a administração, promova outra conta e confirme que ela consegue entrar no painel antes de excluir a sua. Consulte as [regras de acesso](<REGRAS_DE_ACESSO.md>) e teste o fluxo primeiro com uma conta descartável.
 
 A CLI local não depende de credenciais TMDB/JWT para provisionar a conta ou exibir ajuda. Já a API HTTP e o login continuam exigindo a configuração habitual do ambiente.
 

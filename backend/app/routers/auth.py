@@ -1,25 +1,49 @@
 from typing import Annotated
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.exceptions import RequestValidationError
+from fastapi.routing import APIRoute
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.auth import get_current_user
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
+    DeleteAccountRequest,
     TokenResponse,
     UserCreate,
     UserResponse,
 )
+from app.services.account_deletion import account_write_transaction, delete_account
 from app.services.auth import (
     authenticate_user,
     create_access_token,
     create_user,
+    verify_current_password,
 )
+
+
+class _AuthRoute(APIRoute):
+    def get_route_handler(self):
+        handler = super().get_route_handler()
+        if self.methods != {"DELETE"}:
+            return handler
+
+        async def hide_password_validation_input(request: Request) -> Response:
+            try:
+                return await handler(request)
+            except RequestValidationError:
+                # FastAPI's default error includes raw input, even for SecretStr.
+                raise HTTPException(
+                    status.HTTP_422_UNPROCESSABLE_CONTENT, "Corpo da solicitação inválido"
+                ) from None
+
+        return hide_password_validation_input
 
 
 router = APIRouter(
     prefix="/api/auth",
     tags=["auth"],
+    route_class=_AuthRoute,
 )
 
 
@@ -91,3 +115,26 @@ def get_me(
         "email": current_user.email,
         "is_superuser": current_user.is_superuser,
     }
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+def delete_me(
+    body: DeleteAccountRequest,
+    current_user: Annotated[User, Depends(get_current_user)],
+    db: Annotated[Session, Depends(get_db)],
+):
+    actor_id, stored_hash = current_user.id, current_user.password_hash
+    db.rollback()  # Release the authentication read transaction before verifying.
+    password = body.password.get_secret_value()
+    verified = verify_current_password(password, stored_hash)
+
+    with account_write_transaction(db, actor_id) as actor:
+        # Keep the normal Argon2 check outside the writer lock, but never trust
+        # that result if the hash has changed since authentication.
+        if actor.password_hash != stored_hash:
+            verified = verify_current_password(password, actor.password_hash)
+        if not verified:
+            raise HTTPException(status.HTTP_403_FORBIDDEN, "Senha atual incorreta")
+        delete_account(db, actor)
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)

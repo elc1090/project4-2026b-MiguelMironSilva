@@ -11,7 +11,7 @@ class Review(Base):
     __table_args__ = (
         UniqueConstraint("user_id", "tmdb_id", name="uq_reviews_user_movie"),
         Index("ix_reviews_tmdb_id", "tmdb_id"),
-        CheckConstraint("rating IS NULL OR (rating >= 0 AND rating <= 10)", name="ck_reviews_rating_range"),
+        CheckConstraint("rating IS NULL OR (rating >= 1 AND rating <= 10)", name="ck_reviews_rating_range"),
         CheckConstraint("text IS NOT NULL OR rating IS NOT NULL", name="ck_reviews_content_present"),
         {"sqlite_autoincrement": True},
     )

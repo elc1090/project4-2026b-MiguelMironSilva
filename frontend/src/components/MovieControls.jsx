@@ -1,206 +1,85 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { getMovieState, getToken, updateMovieState } from "../services/api.js";
 
-import {
-getMovieState,
-updateMovieState,
-} from "../services/api.js";
+function ControlsForSession({ movieId, token }) {
+    const [state, setState] = useState(null);
+    const [error, setError] = useState("");
+    const [isSaving, setIsSaving] = useState(false);
+    const activeWrite = useRef(null);
 
-const EMPTY_STATE = {
-favorite: false,
-watched: false,
-};
+    useEffect(() => {
+        if (!token || movieId == null || getToken() !== token) return;
 
-function MovieControls({
-movie,
-currentUser,
-}) {
-const [movieState, setMovieState] = useState(
-EMPTY_STATE
-);
-
-const [isLoading, setIsLoading] = useState(false);
-const [isSaving, setIsSaving] = useState(false);
-const [error, setError] = useState("");
-
-
-useEffect(() => {
-    let cancelled = false;
-
-
-    const loadState = async () => {
-        if (!movie?.id || !currentUser) {
-            setMovieState(EMPTY_STATE);
-            setError("");
-            return;
-        }
-
-
-        setIsLoading(true);
-        setError("");
-
-
-        try {
-            const state = await getMovieState(
-                movie.id
-            );
-
-
-            if (cancelled) {
-                return;
+        const controller = new AbortController();
+        const { signal } = controller;
+        const isCurrent = () => !signal.aborted && getToken() === token;
+        getMovieState(movieId, { signal }).then(movieState => {
+            if (isCurrent()) setState(movieState);
+        }).catch(loadError => {
+            if (isCurrent()) {
+                setError(loadError.status === 401
+                    ? "Sua sessão expirou. Entre novamente para atualizar seus filmes."
+                    : "Não foi possível carregar o estado do filme.");
             }
-
-
-            setMovieState({
-                favorite: Boolean(state.favorite),
-                watched: Boolean(state.watched),
-            });
-
-        } catch (loadError) {
-            if (cancelled) {
-                return;
-            }
-
-
-            console.error(
-                "Failed to load movie state:",
-                loadError
-            );
-
-
-            setMovieState(EMPTY_STATE);
-
-            setError(
-                loadError.message ||
-                "Falha ao carregar o estado do filme."
-            );
-
-        } finally {
-            if (!cancelled) {
-                setIsLoading(false);
-            }
-        }
-    };
-
-
-    loadState();
-
-
-    return () => {
-        cancelled = true;
-    };
-}, [movie, currentUser]);
-
-
-const saveState = async (changes) => {
-    if (!currentUser || !movie?.id) {
-        return;
-    }
-
-
-    setIsSaving(true);
-    setError("");
-
-
-    try {
-        const updatedState =
-            await updateMovieState(
-                movie.id,
-                changes
-            );
-
-
-        setMovieState({
-            favorite: Boolean(updatedState.favorite),
-            watched: Boolean(updatedState.watched),
         });
 
-    } catch (saveError) {
-        console.error(
-            "Failed to save movie state:",
-            saveError
-        );
+        return () => controller.abort();
+    }, [movieId, token]);
 
-        setError(
-            saveError.message ||
-            "Falha ao salvar a alteração."
-        );
+    useEffect(() => () => activeWrite.current?.abort(), []);
 
-    } finally {
-        setIsSaving(false);
+    async function toggle(field) {
+        if (!token || movieId == null || getToken() !== token || !state || activeWrite.current) return;
+        const controller = new AbortController();
+        const { signal } = controller;
+        activeWrite.current = controller;
+        const isCurrent = () => !signal.aborted && activeWrite.current === controller && getToken() === token;
+        setIsSaving(true);
+        setError("");
+
+        try {
+            const updated = await updateMovieState(movieId, { [field]: !state[field] }, { signal });
+            if (isCurrent()) setState(updated);
+        } catch (saveError) {
+            if (isCurrent()) {
+                if (saveError.status === 401) setState(null);
+                setError(saveError.status === 401
+                    ? "Sua sessão expirou. Entre novamente para atualizar seus filmes."
+                    : "Não foi possível salvar a alteração.");
+            }
+        } finally {
+            if (isCurrent()) setIsSaving(false);
+            if (activeWrite.current === controller) activeWrite.current = null;
+        }
     }
-};
 
-
-const toggleFavorite = () => {
-    saveState({
-        favorite: !movieState.favorite,
-    });
-};
-
-
-const toggleWatched = () => {
-    saveState({
-        watched: !movieState.watched,
-    });
-};
-
-
-const controlsDisabled =
-    !currentUser ||
-    isLoading ||
-    isSaving;
-
-
-return (
-    <div className="user-movie-controls">
-
-        <button
-            type="button"
-            onClick={toggleFavorite}
-            disabled={controlsDisabled}
-            aria-pressed={movieState.favorite}
-        >
-            {movieState.favorite
-                ? "Favoritado"
-                : "Favoritar"}
-        </button>
-
-
-        <button
-            type="button"
-            onClick={toggleWatched}
-            disabled={controlsDisabled}
-            aria-pressed={movieState.watched}
-        >
-            {movieState.watched
-                ? "Assistido"
-                : "Marcar como assistido"}
-        </button>
-
-
-        {isLoading && (
-            <span className="movie-controls-status">
-                Carregando...
-            </span>
-        )}
-
-
-        {isSaving && (
-            <span className="movie-controls-status">
-                Salvando...
-            </span>
-        )}
-
-
-        {error && (
-            <span className="movie-controls-error">
-                {error}
-            </span>
-        )}
-
-    </div>
-);
-
+    const controlsDisabled = !state || isSaving;
+    const isLoading = token && movieId != null && !state && !error;
+    return (
+        <div className="user-movie-controls">
+            <button type="button" onClick={() => toggle("favorite")} disabled={controlsDisabled}
+                aria-pressed={Boolean(state?.favorite)}>
+                {state?.favorite ? "Favoritado" : "Favoritar"}
+            </button>
+            <button type="button" onClick={() => toggle("watched")} disabled={controlsDisabled}
+                aria-pressed={Boolean(state?.watched)}>
+                {state?.watched ? "Assistido" : "Marcar como assistido"}
+            </button>
+            <button type="button" onClick={() => toggle("watchlist")} disabled={controlsDisabled}
+                aria-pressed={Boolean(state?.watchlist)}>
+                Desejo assistir
+            </button>
+            {(isLoading || isSaving) && (
+                <span className="movie-controls-status" role="status">{isSaving ? "Salvando..." : "Carregando..."}</span>
+            )}
+            {error && <span className="movie-controls-error" role="alert">{error}</span>}
+        </div>
+    );
 }
 
-export default MovieControls;
+export default function MovieControls({ movie, currentUser }) {
+    const movieId = movie?.id;
+    const token = currentUser ? getToken() : null;
+    return <ControlsForSession key={JSON.stringify([movieId, currentUser?.id, token])}
+        movieId={movieId} token={token} />;
+}

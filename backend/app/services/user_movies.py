@@ -39,46 +39,33 @@ def update_movie_state(
         tmdb_id,
     )
 
-    if movie_state is None:
+    is_new = movie_state is None
+    if is_new:
         movie_state = UserMovie(
             user_id=user_id,
             tmdb_id=tmdb_id,
-            favorite=updates.get("favorite", False),
-            watched=updates.get("watched", False),
+            favorite=False,
+            watched=False,
+            watchlist=False,
         )
 
-        # Don't create an empty record.
-        if (
-            not movie_state.favorite
-            and not movie_state.watched
-        ):
-            return {
-                "tmdb_id": tmdb_id,
-                "favorite": False,
-                "watched": False,
-            }
+    for field, value in updates.items():
+        setattr(movie_state, field, value)
 
-        db.add(movie_state)
-
-    else:
-        for field, value in updates.items():
-            setattr(movie_state, field, value)
-
-        # If the user has removed all personal state,
-        # remove the database row as well.
-        if (
-            not movie_state.favorite
-            and not movie_state.watched
-        ):
+    # Store a row only while at least one independent flag is set.
+    if not (movie_state.favorite or movie_state.watched or movie_state.watchlist):
+        if not is_new:
             db.delete(movie_state)
             db.commit()
+        return {
+            "tmdb_id": tmdb_id,
+            "favorite": False,
+            "watched": False,
+            "watchlist": False,
+        }
 
-            return {
-                "tmdb_id": tmdb_id,
-                "favorite": False,
-                "watched": False,
-            }
-
+    if is_new:
+        db.add(movie_state)
     db.commit()
     db.refresh(movie_state)
 

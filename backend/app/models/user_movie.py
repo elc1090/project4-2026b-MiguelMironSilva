@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, UniqueConstraint
+from sqlalchemy import ForeignKey, String, UniqueConstraint, false
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.database import Base
 
@@ -29,6 +29,12 @@ class UserMovie(Base):
     watched: Mapped[bool] = mapped_column(
         nullable=False,
         default=False,
+    )
+
+    watchlist: Mapped[bool] = mapped_column(
+        nullable=False,
+        default=False,
+        server_default=false(),
     )
 
     user: Mapped["User"] = relationship(

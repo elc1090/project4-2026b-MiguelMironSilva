@@ -20,6 +20,10 @@ if (state?.watched) {
     statusParts.push("Assistido");
 }
 
+if (state?.watchlist) {
+    statusParts.push("Desejo assistir");
+}
+
 
 return (
     <article

@@ -16,7 +16,7 @@ const dateFormatter = new Intl.DateTimeFormat("pt-BR", {
     timeStyle: "short",
 });
 
-function ReviewDate({ value }) {
+export function ReviewDate({ value }) {
     const date = new Date(value);
     if (Number.isNaN(date.getTime())) return "data não informada";
     return <time dateTime={value}>{dateFormatter.format(date)}</time>;

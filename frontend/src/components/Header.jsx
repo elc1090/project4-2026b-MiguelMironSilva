@@ -4,7 +4,12 @@ function Header({
 user,
 onLogin,
 onMyMovies,
+onMyReviews,
+onWatchlist,
+view,
 onAdmin,
+onAccount,
+isAccountOpen,
 onLogout,
 onToggleTheme,
 isDarkMode,
@@ -42,8 +47,27 @@ return ( <header> <div className="logo"> <img
                         <button
                             type="button"
                             onClick={onMyMovies}
+                            aria-current={view === "library" ? "page" : undefined}
                         >
                             Meus Filmes
+                        </button>
+
+                        <button type="button" onClick={onMyReviews}
+                            aria-current={view === "my-reviews" ? "page" : undefined}>
+                            Minhas Resenhas
+                        </button>
+
+                        <button type="button" onClick={onWatchlist}
+                            aria-current={view === "watchlist" ? "page" : undefined}>
+                            Desejo assistir
+                        </button>
+
+                        <button
+                            type="button"
+                            onClick={onAccount}
+                            aria-current={isAccountOpen ? "page" : undefined}
+                        >
+                            Minha conta
                         </button>
 
                         <button

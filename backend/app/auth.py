@@ -43,6 +43,8 @@ def get_current_user(
             user_id = int(user_id)
         except (TypeError, ValueError):
             raise invalid_credentials()
+        if not -(2**63) <= user_id <= 2**63 - 1:
+            raise invalid_credentials()
 
         user = db.scalar(
             select(User).where(User.id == user_id)

@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 import jwt
 from pwdlib import PasswordHash
+from pwdlib.exceptions import UnknownHashError
 from sqlalchemy import or_, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -75,6 +76,14 @@ def authenticate_user(
         return None
 
     return user
+
+
+def verify_current_password(password: str, stored_hash: str) -> bool:
+    try:
+        return password_hash.verify(password, stored_hash)
+    except (UnknownHashError, UnicodeError):
+        # Unusable legacy data or a password not encodable as UTF-8 cannot match.
+        return False
 
 
 def create_access_token(

@@ -41,6 +41,18 @@ A [revisão `20261118_04`](<alembic/versions/20261118_04_non_reusable_user_ids.p
 
 Esta revisão não oferece downgrade automático: desfazer a proteção poderia reintroduzir reutilização de identificadores já excluídos. Se precisar restaurar um backup anterior, revise as exclusões feitas desde a cópia e invalide as sessões antigas antes de reabrir a aplicação.
 
+A autoexclusão da etapa 6 reaproveita essa proteção e não cria uma nova revisão.
+
+## Escala de avaliações de 1 a 10
+
+A [revisão `20261118_05`](<alembic/versions/20261118_05_review_rating_scale.py>) converte as notas antigas `0` em `1`, o novo mínimo. Ela preserva o texto e os demais dados da avaliação; resenhas sem nota continuam sem nota. A nova restrição do banco impede que notas fora da escala sejam gravadas. Pare a API, faça um backup consistente e execute `python -m alembic upgrade head` de dentro de `backend` antes de reiniciar.
+
+O downgrade desta revisão volta a aceitar nota `0`, mas não desfaz valores convertidos: não é possível distinguir um antigo `0` de um `1` original.
+
+## Lista Desejo assistir
+
+A [revisão `20261119_06`](<alembic/versions/20261119_06_user_movie_watchlist.py>) acrescenta `watchlist` aos estados de filme. Favoritos e assistidos existentes são preservados; a lista nova começa vazia. Antes de reiniciar a API, pare o serviço, faça backup e execute `python -m alembic upgrade head` dentro de `backend`. Voltar à revisão anterior descarta as marcações de **Desejo assistir**.
+
 ## Testes
 
 A suíte e o arquivo `requirements-test.txt` são locais e não vêm em um clone novo. Quando estiverem disponíveis, a partir de `backend`, instale as dependências de desenvolvimento e execute a suíte:

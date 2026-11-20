@@ -1,256 +1,71 @@
-import { useEffect, useState } from "react";
-
-import {
-getMyMovies,
-getMovie,
-} from "../services/api.js";
-
+import { useId, useState } from "react";
+import { getMyMovies, getToken } from "../services/api.js";
 import MovieCard from "./MovieCard.jsx";
+import { usePersonalMovieList } from "./usePersonalMovieList.js";
 
-function MyMovies({
-currentUser,
-onMovieSelected,
-onBack,
-}) {
-const [movieEntries, setMovieEntries] = useState([]);
-const [filter, setFilter] = useState("all");
+const FILTERS = [
+    ["all", "Todos", "Você ainda não salvou nenhum filme."],
+    ["favorite", "Favoritados", "Você não possui filmes favoritados."],
+    ["watched", "Vistos", "Você não possui filmes marcados como vistos."],
+];
 
+function MoviesForSession({ token, watchlistOnly, onMovieSelected }) {
+    const { rows, error, movieFor } = usePersonalMovieList(getMyMovies, token, { watchlistOnly });
+    const [filter, setFilter] = useState("all");
+    const visibleRows = rows?.filter(state => watchlistOnly || filter === "all" || state[filter]);
 
-const [isLoading, setIsLoading] = useState(false);
-const [error, setError] = useState("");
-
-
-useEffect(() => {
-    if (!currentUser) {
-        setMovieEntries([]);
-        setError("");
-        return;
-    }
-
-    let cancelled = false;
-
-
-    const loadLibrary = async () => {
-        setIsLoading(true);
-        setError("");
-
-
-        try {
-            const states = await getMyMovies();
-
-
-            if (cancelled) {
-                return;
-            }
-
-
-            const entries = await Promise.all(
-                states.map(async (state) => {
-                    try {
-                        const movie = await getMovie(
-                            state.tmdb_id
-                        );
-
-                        return {
-                            movie,
-                            state,
-                        };
-
-                    } catch (movieError) {
-                        console.error(
-                            `Failed to load movie ${state.tmdb_id}:`,
-                            movieError
-                        );
-
-                        return null;
-                    }
-                })
-            );
-
-
-            if (cancelled) {
-                return;
-            }
-
-
-            setMovieEntries(
-                entries.filter(
-                    entry => entry !== null
-                )
-            );
-
-        } catch (loadError) {
-            if (cancelled) {
-                return;
-            }
-
-            console.error(
-                "Failed to load My Movies:",
-                loadError
-            );
-
-            setMovieEntries([]);
-
-            setError(
-                loadError.message ||
-                "Falha ao carregar seus filmes."
-            );
-
-        } finally {
-            if (!cancelled) {
-                setIsLoading(false);
-            }
-        }
-    };
-
-
-    loadLibrary();
-
-
-    return () => {
-        cancelled = true;
-    };
-}, [currentUser]);
-
-
-const filteredEntries =
-    movieEntries.filter(({ state }) => {
-        if (filter === "favorites") {
-            return state.favorite;
-        }
-
-        if (filter === "watched") {
-            return state.watched;
-        }
-
-        return true;
-    });
-
-
-const handleMovieClick = (movie) => {
-    onMovieSelected(movie);
-};
-
-
-return (
-    <section className="my-movies-section">
-
-        <div className="my-movies-header">
-
-            <h1>My Movies</h1>
-
-            <button
-                type="button"
-                onClick={onBack}
-            >
-                Pesquisar
-            </button>
-
-        </div>
-
-
-        <div className="my-movies-filters">
-
-            <button
-                type="button"
-                className={
-                    filter === "all"
-                        ? "active"
-                        : ""
-                }
-                onClick={() => setFilter("all")}
-            >
-                Todos
-            </button>
-
-            <button
-                type="button"
-                className={
-                    filter === "favorites"
-                        ? "active"
-                        : ""
-                }
-                onClick={() =>
-                    setFilter("favorites")
-                }
-            >
-                Favoritados
-            </button>
-
-            <button
-                type="button"
-                className={
-                    filter === "watched"
-                        ? "active"
-                        : ""
-                }
-                onClick={() =>
-                    setFilter("watched")
-                }
-            >
-                Vistos
-            </button>
-
-        </div>
-
-
-        {isLoading && (
-            <p className="my-movies-empty">
-                Carregando seus filmes...
-            </p>
-        )}
-
-
-        {!isLoading && error && (
-            <p className="search-error">
-                {error}
-            </p>
-        )}
-
-
-        {!isLoading &&
-            !error &&
-            filteredEntries.length === 0 && (
-                <p className="my-movies-empty">
-                    {filter === "all"
-                        ? "Você ainda não salvou nenhum filme."
-                        : filter === "favorites"
-                            ? "Você não possui filmes favoritados."
-                            : "Você não possui filmes marcados como vistos."
-                    }
-                </p>
-            )
-        }
-
-
-        {!isLoading &&
-            !error &&
-            filteredEntries.length > 0 && (
-                <div className="my-movies-list">
-
-                    {filteredEntries.map(
-                        ({ movie, state }) => (
-                            <MovieCard
-                                key={movie.id}
-                                movie={movie}
-                                state={state}
-                                onClick={() =>
-                                    handleMovieClick(
-                                        movie
-                                    )
-                                }
-                            />
-                        )
-                    )}
-
+    return (
+        <>
+            {!watchlistOnly && (
+                <div className="my-movies-filters" role="group" aria-label="Filtrar meus filmes">
+                    {FILTERS.map(([value, name]) => (
+                        <button key={value} type="button" className={filter === value ? "active" : ""}
+                            aria-pressed={filter === value} onClick={() => setFilter(value)}>
+                            {name}
+                        </button>
+                    ))}
                 </div>
-            )
-        }
-
-    </section>
-);
-
-
+            )}
+            {error ? (
+                <p className="search-error" role="alert">
+                    {error.status === 401
+                        ? "Sua sessão expirou. Entre novamente para ver seus filmes."
+                        : "Não foi possível carregar seus filmes. Tente novamente."}
+                </p>
+            ) : !visibleRows ? (
+                <p className="my-movies-empty" role="status">Carregando seus filmes...</p>
+            ) : visibleRows.length === 0 ? (
+                <p className="my-movies-empty">
+                    {watchlistOnly
+                        ? "Você ainda não marcou filmes que deseja assistir."
+                        : FILTERS.find(([value]) => value === filter)[2]}
+                </p>
+            ) : (
+                <div className="my-movies-list">
+                    {visibleRows.map(state => {
+                        const movie = movieFor(state.tmdb_id);
+                        return <MovieCard key={state.tmdb_id} movie={movie} state={state}
+                            onClick={() => onMovieSelected(movie)} />;
+                    })}
+                </div>
+            )}
+        </>
+    );
 }
 
-export default MyMovies;
+export default function MyMovies({ currentUser, onMovieSelected, onBack, watchlistOnly = false }) {
+    const titleId = useId();
+    const token = currentUser ? getToken() : null;
+    return (
+        <section className="my-movies-section" aria-labelledby={titleId}>
+            <div className="my-movies-header">
+                <h1 id={titleId}>{watchlistOnly ? "Desejo assistir" : "My Movies"}</h1>
+                <button type="button" onClick={onBack}>Pesquisar</button>
+            </div>
+            {currentUser ? (
+                <MoviesForSession key={JSON.stringify([currentUser.id, token, watchlistOnly])}
+                    token={token} watchlistOnly={watchlistOnly} onMovieSelected={onMovieSelected} />
+            ) : <p className="my-movies-empty">Entre para ver seus filmes.</p>}
+        </section>
+    );
+}

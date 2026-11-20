@@ -55,6 +55,7 @@ def get_my_movie_state(
             "tmdb_id": tmdb_id,
             "favorite": False,
             "watched": False,
+            "watchlist": False,
         }
 
     return movie_state
@@ -70,16 +71,12 @@ def update_my_movie_state(
     current_user: Annotated[object, Depends(get_current_user)],
     db: Annotated[Session, Depends(get_db)],
 ):
-    if not update.model_fields_set:
+    updates = update.model_dump(exclude_unset=True)
+    if not updates:
         raise HTTPException(
             status_code=400,
             detail="Nenhum campo foi fornecido",
         )
-
-    updates = {
-        field: getattr(update, field)
-        for field in update.model_fields_set
-    }
 
     return update_movie_state(
         db,

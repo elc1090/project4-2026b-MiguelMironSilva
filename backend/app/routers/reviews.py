@@ -15,6 +15,7 @@ from app.schemas.reviews import ReviewResponse, ReviewWrite
 
 
 router = APIRouter(prefix="/api/movies/{tmdb_id}/reviews", tags=["reviews"])
+personal_router = APIRouter(prefix="/api/reviews", tags=["reviews"])
 
 SQLiteId = Annotated[int, Path(ge=1, le=2**63 - 1)]
 Database = Annotated[Session, Depends(get_db)]
@@ -34,6 +35,16 @@ def list_reviews(tmdb_id: SQLiteId, db: Database):
         select(Review)
         .options(joinedload(Review.author))
         .where(Review.tmdb_id == tmdb_id)
+        .order_by(Review.created_at.desc(), Review.id.desc())
+    ).all()
+
+
+@personal_router.get("/mine", response_model=list[ReviewResponse])
+def list_my_reviews(db: Database, current_user: CurrentUser):
+    return db.scalars(
+        select(Review)
+        .options(joinedload(Review.author))
+        .where(Review.user_id == current_user.id)
         .order_by(Review.created_at.desc(), Review.id.desc())
     ).all()
 

@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
 
 
 class UserCreate(BaseModel):
@@ -22,6 +22,13 @@ class AdminUserResponse(BaseModel):
 
 class UserResponse(AdminUserResponse):
     email: str
+
+
+class DeleteAccountRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    password: SecretStr
+
 
 class LoginRequest(BaseModel):
     identifier: str

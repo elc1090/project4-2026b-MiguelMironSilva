@@ -8,7 +8,7 @@ class ReviewWrite(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     text: Annotated[str | None, StringConstraints(strip_whitespace=True, max_length=2000)] = None
-    rating: int | None = Field(default=None, ge=0, le=10)
+    rating: int | None = Field(default=None, ge=1, le=10)
 
     @field_validator("text", mode="before")
     @classmethod

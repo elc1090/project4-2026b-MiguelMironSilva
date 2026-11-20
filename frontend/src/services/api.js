@@ -164,6 +164,20 @@ return parseResponse(response);
 
 };
 
+export const deleteCurrentUser = async (password, { signal } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+        method: "DELETE",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+        body: JSON.stringify({ password }),
+        signal,
+    });
+    if (response.status === 204) return;
+    // This mutation's outcome is defined by its status, not an optional body.
+    const error = new Error("Não foi possível excluir a conta.");
+    error.status = response.status;
+    throw error;
+};
+
 export const getAdminIdentity = async ({ signal } = {}) => {
 const response = await fetch(`${API_BASE_URL}/admin/me`, {
     headers: getAuthHeaders(),
@@ -176,6 +190,15 @@ const adminUsersUrl = `${API_BASE_URL}/admin/users`;
 
 export const getAdminUsers = async ({ signal } = {}) => {
     const response = await fetch(adminUsersUrl, { headers: getAuthHeaders(), signal });
+    return parseResponse(response);
+};
+
+export const promoteAdminUser = async (userId, { signal } = {}) => {
+    const response = await fetch(`${adminUsersUrl}/${encodeURIComponent(userId)}/promote`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        signal,
+    });
     return parseResponse(response);
 };
 
@@ -209,9 +232,10 @@ return parseResponse(response);
 
 };
 
-export const getMovie = async (tmdbId) => {
+export const getMovie = async (tmdbId, { signal } = {}) => {
 const response = await fetch(
-`${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}`
+`${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}`,
+{ signal }
 );
 
 
@@ -234,6 +258,14 @@ return parseResponse(response);
 // ============================================================
 // RESENHAS DE FILMES
 // ============================================================
+
+export const getMyReviews = async ({ signal } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/reviews/mine`, {
+        headers: getAuthHeaders(),
+        signal,
+    });
+    return parseResponse(response);
+};
 
 const movieReviewsUrl = (tmdbId) =>
     `${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}/reviews`;
@@ -270,44 +302,22 @@ export const deleteMovieReview = (tmdbId, reviewId, { signal } = {}) =>
 // ESTADO DO FILME DO USUÁRIO
 // ============================================================
 
-export const getMovieState = async (tmdbId) => {
-const response = await fetch(
-`${API_BASE_URL}/my-movies/${encodeURIComponent(tmdbId)}`,
-{
-headers: {
-...getAuthHeaders(),
-},
-}
-);
+const movieStateUrl = (tmdbId) =>
+    `${API_BASE_URL}/my-movies/${encodeURIComponent(tmdbId)}`;
 
-
-return parseResponse(response);
-
-
+export const getMovieState = async (tmdbId, { signal } = {}) => {
+    const response = await fetch(movieStateUrl(tmdbId), { headers: getAuthHeaders(), signal });
+    return parseResponse(response);
 };
 
-export const updateMovieState = async (
-tmdbId,
-changes
-) => {
-const response = await fetch(
-`${API_BASE_URL}/my-movies/${encodeURIComponent(tmdbId)}`,
-{
-method: "PATCH",
-
-
-        headers: {
-            ...getAuthHeaders(),
-            "Content-Type": "application/json",
-        },
-
+export const updateMovieState = async (tmdbId, changes, { signal } = {}) => {
+    const response = await fetch(movieStateUrl(tmdbId), {
+        method: "PATCH",
+        headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(changes),
-    }
-);
-
-return parseResponse(response);
-
-
+        signal,
+    });
+    return parseResponse(response);
 };
 
 export const deleteMovieState = async (tmdbId) => {
@@ -328,18 +338,10 @@ return parseResponse(response);
 
 };
 
-export const getMyMovies = async () => {
-const response = await fetch(
-`${API_BASE_URL}/my-movies/`,
-{
-headers: {
-...getAuthHeaders(),
-},
-}
-);
-
-
-return parseResponse(response);
-
-
+export const getMyMovies = async ({ signal } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/my-movies/`, {
+        headers: getAuthHeaders(),
+        signal,
+    });
+    return parseResponse(response);
 };

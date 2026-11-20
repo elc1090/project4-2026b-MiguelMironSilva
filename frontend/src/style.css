@@ -990,6 +990,31 @@ background-color: var(--primary-text-color);
 color: #ffffff;
 }
 
+.my-reviews-section .movie-review-list {
+    max-width: 52rem;
+    padding: 0;
+}
+
+.my-reviews-section .movie-review-list h2 {
+    color: var(--primary-text-color);
+}
+
+.my-reviews-section .my-review-open-movie {
+    justify-self: start;
+    padding: .5rem .75rem;
+    border: 1px solid var(--primary-border-color);
+    border-radius: 6px;
+    background: var(--movie-search-bg-color);
+    color: var(--secondary-text-color);
+    font: inherit;
+    cursor: pointer;
+}
+
+.my-reviews-section button:focus-visible {
+    outline: 2px solid var(--primary-text-color);
+    outline-offset: 2px;
+}
+
 .my-movies-list {
 display: grid;
 
@@ -1251,9 +1276,86 @@ header .header-controls {
 }
 
 .admin-area button:focus-visible,
-.account-controls button:focus-visible {
+.account-controls button:focus-visible,
+.account-area :is(button, input):focus-visible {
     outline: 3px solid var(--secondary-text-color);
     outline-offset: 3px;
+}
+
+/* ============================================================
+MINHA CONTA
+============================================================ */
+
+.account-area,
+.account-notice {
+    width: min(760px, calc(100% - 30px));
+    margin: 24px auto;
+    font-family: 'Segoe UI', sans-serif;
+    color: var(--secondary-text-color);
+}
+
+.account-area h1 {
+    margin-bottom: 20px;
+    font-size: clamp(1.6rem, 5vw, 2.5rem);
+}
+
+.account-card,
+.account-notice {
+    padding: clamp(14px, 4vw, 20px);
+    border: 2px solid var(--primary-border-color);
+    border-radius: 10px;
+    background: var(--movie-search-bg-color);
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+}
+
+.account-card > * + * {
+    margin-top: 12px;
+}
+
+.account-delete-form {
+    display: grid;
+    gap: 8px;
+}
+
+.account-delete-form input {
+    width: min(100%, 28rem);
+    min-height: 44px;
+    padding: 8px 12px;
+    border: 1px solid var(--secondary-text-color);
+    border-radius: 6px;
+    background: var(--body-bg-color);
+    color: var(--secondary-text-color);
+    font: inherit;
+}
+
+.account-delete-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.account-delete-button,
+.account-cancel-button {
+    min-height: 44px;
+    padding: 6px 12px;
+    border: 1px solid var(--secondary-text-color);
+    border-radius: 6px;
+    background: var(--movie-search-bg-color);
+    color: var(--secondary-text-color);
+    font: inherit;
+    cursor: pointer;
+}
+
+.account-delete-button {
+    border-color: #a11836;
+    background: #a11836;
+    color: #fff;
+}
+
+.account-card button:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
 }
 
 /* ============================================================

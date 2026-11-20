@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
 clearToken,
+deleteCurrentUser,
 getCurrentUser,
 getToken,
 login,
@@ -14,8 +15,12 @@ import AuthPanel from "./components/AuthPanel.jsx";
 import MovieSearch from "./components/MovieSearch.jsx";
 import MovieDetails from "./components/MovieDetails.jsx";
 import MyMovies from "./components/MyMovies.jsx";
+import MyReviews from "./components/MyReviews.jsx";
 import AdminArea from "./components/AdminArea.jsx";
+import AccountArea from "./components/AccountArea.jsx";
 import { canAccessAdmin } from "./services/adminPolicy.js";
+
+const NO_ACCOUNT_DELETION = { pending: false, error: null };
 
 function App() {
 const [currentUser, setCurrentUser] = useState(null);
@@ -24,13 +29,29 @@ const [currentView, setCurrentView] = useState("search");
 const [showAuthPanel, setShowAuthPanel] = useState(false);
 const [isDarkMode, setIsDarkMode] = useState(false);
 const [isInitializing, setIsInitializing] = useState(true);
+const detailsOrigin = useRef("search");
 const sessionRevision = useRef(0);
+const authenticatedSession = useRef(null);
+const activeAccountDeletion = useRef(null);
+const [accountDeletion, setAccountDeletion] = useState(NO_ACCOUNT_DELETION);
+const [accountNotice, setAccountNotice] = useState(null);
+const accountNoticeRef = useRef(null);
+
+const resetAccountSession = useCallback(() => {
+    authenticatedSession.current = null;
+    activeAccountDeletion.current?.abort();
+    activeAccountDeletion.current = null;
+    setAccountDeletion(NO_ACCOUNT_DELETION);
+}, []);
+
+useEffect(() => () => activeAccountDeletion.current?.abort(), []);
 
 const handleAdminAccessDenied = useCallback(async (status) => {
     const revision = ++sessionRevision.current;
     // Never leave stale admin UI visible while /auth/me is being refreshed.
     setCurrentUser(user => user ? { ...user, is_superuser: false } : null);
     if (status === 401) {
+        resetAccountSession();
         clearToken();
         setCurrentUser(null);
         return;
@@ -45,39 +66,53 @@ const handleAdminAccessDenied = useCallback(async (status) => {
     } catch (error) {
         if (revision !== sessionRevision.current || getToken() !== token) return;
         if (error.status === 401) {
+            resetAccountSession();
             clearToken();
             setCurrentUser(null);
         }
         // On network/server errors retain the conservatively hidden admin role.
     }
-}, []);
+}, [resetAccountSession]);
 
 
 useEffect(() => {
+    let active = true;
+    const token = getToken();
     const restoreSession = async () => {
         try {
             const user = await getCurrentUser();
-
-            setCurrentUser(user);
+            if (active && getToken() === token) {
+                authenticatedSession.current = token ? { token } : null;
+                setCurrentUser(user);
+            }
         } catch (error) {
-            clearToken();
-            setCurrentUser(null);
+            if (active && getToken() === token) {
+                clearToken();
+                setCurrentUser(null);
+            }
         } finally {
-            setIsInitializing(false);
+            if (active) setIsInitializing(false);
         }
     };
 
-    restoreSession();
+    if (token) restoreSession();
+    else setIsInitializing(false);
+    return () => { active = false; };
 }, []);
 
 
 const handleLogin = async (username, password) => {
-    ++sessionRevision.current;
-    await login(username, password);
+    const revision = ++sessionRevision.current;
+    resetAccountSession();
+    const { access_token: token } = await login(username, password);
+    if (revision !== sessionRevision.current || getToken() !== token) return;
 
     const user = await getCurrentUser();
+    if (revision !== sessionRevision.current || getToken() !== token) return;
 
+    authenticatedSession.current = { token };
     setCurrentUser(user);
+    setAccountNotice(null);
     setShowAuthPanel(false);
     setCurrentView((view) => view === "details" ? view : "search");
 };
@@ -86,10 +121,15 @@ useEffect(() => {
     if (showAuthPanel) document.getElementById("login-username")?.focus();
 }, [showAuthPanel]);
 
+useEffect(() => {
+    if (accountNotice?.kind === "success") accountNoticeRef.current?.focus();
+}, [accountNotice]);
+
 const handleReviewLogin = () => {
     if (currentUser) {
         // A signed-in user only sees the review login action after a 401.
         ++sessionRevision.current;
+        resetAccountSession();
         clearToken();
         setCurrentUser(null);
     }
@@ -111,26 +151,62 @@ const handleRegister = async (
 };
 
 
-const handleLogout = () => {
+const endSession = (notice = null) => {
     ++sessionRevision.current;
+    resetAccountSession();
     logout();
 
     setCurrentUser(null);
     setCurrentMovie(null);
     setCurrentView("search");
-    setShowAuthPanel(false);
+    setAccountNotice(notice);
+    setShowAuthPanel(notice?.kind === "login");
+};
+
+const handleDeleteAccount = async (password) => {
+    const session = authenticatedSession.current;
+    if (!session || session.token !== getToken() || activeAccountDeletion.current) return;
+
+    // The mutation belongs to the session, not the view: leaving Minha conta
+    // must not prevent a completed deletion from signing that session out.
+    const controller = new AbortController();
+    activeAccountDeletion.current = controller;
+    const isCurrent = () => !controller.signal.aborted
+        && authenticatedSession.current === session && getToken() === session.token;
+    setAccountDeletion({ pending: true, error: null });
+
+    try {
+        await deleteCurrentUser(password, { signal: controller.signal });
+        if (isCurrent()) endSession({ kind: "success", text: "Sua conta foi excluída definitivamente." });
+    } catch (error) {
+        if (!isCurrent()) return;
+        if (error.status === 401) {
+            endSession({ kind: "login", text: "Sua sessão expirou. Faça login para excluir sua conta." });
+        } else {
+            setAccountDeletion({ pending: false, error: error.status ?? "network" });
+        }
+    } finally {
+        if (activeAccountDeletion.current === controller) activeAccountDeletion.current = null;
+    }
 };
 
 
 const handleMovieSelected = (movie) => {
+    detailsOrigin.current = currentView;
     setCurrentMovie(movie);
     setCurrentView("details");
 };
 
-
-const handleOpenMyMovies = () => {
-    setCurrentView("library");
+const handleBackFromDetails = () => {
     setCurrentMovie(null);
+    setCurrentView(currentUser ? detailsOrigin.current : "search");
+};
+
+const openPersonalList = (view) => {
+    if (!currentUser) return;
+    setCurrentView(view);
+    setCurrentMovie(null);
+    setShowAuthPanel(false);
 };
 
 
@@ -139,6 +215,13 @@ const handleOpenAdmin = () => {
     setCurrentMovie(null);
     setShowAuthPanel(false);
     setCurrentView("admin");
+};
+
+const handleOpenAccount = () => {
+    if (!currentUser || !authenticatedSession.current || authenticatedSession.current.token !== getToken()) return;
+    setCurrentMovie(null);
+    setShowAuthPanel(false);
+    setCurrentView("account");
 };
 
 const handleBackToSearch = () => {
@@ -174,13 +257,25 @@ return (
         <Header
             user={currentUser}
             onLogin={() => setShowAuthPanel(true)}
-            onMyMovies={handleOpenMyMovies}
+            onMyMovies={() => openPersonalList("library")}
+            onMyReviews={() => openPersonalList("my-reviews")}
+            onWatchlist={() => openPersonalList("watchlist")}
+            view={currentView}
             onAdmin={handleOpenAdmin}
-            onLogout={handleLogout}
+            onAccount={handleOpenAccount}
+            isAccountOpen={currentView === "account"}
+            onLogout={() => endSession()}
             onToggleTheme={toggleTheme}
             isDarkMode={isDarkMode}
         />
 
+
+        {accountNotice && (
+            <p className="account-notice" role={accountNotice.kind === "login" ? "alert" : "status"}
+                ref={accountNoticeRef} tabIndex={-1}>
+                {accountNotice.text}
+            </p>
+        )}
 
         {showAuthPanel && (
             <AuthPanel
@@ -189,6 +284,20 @@ return (
             />
         )}
 
+
+        {currentView === "account" && currentUser && (
+            <AccountArea
+                key={currentUser.id}
+                user={currentUser}
+                pending={accountDeletion.pending}
+                error={accountDeletion.error}
+                onClearError={() => {
+                    if (accountDeletion.error !== null) setAccountDeletion(NO_ACCOUNT_DELETION);
+                }}
+                onDelete={handleDeleteAccount}
+                onBack={handleBackToSearch}
+            />
+        )}
 
         {currentView === "admin" && (
             <AdminArea
@@ -213,19 +322,29 @@ return (
                     movie={currentMovie}
                     currentUser={currentUser}
                     onLogin={handleReviewLogin}
-                    onBack={handleBackToSearch}
+                    onBack={handleBackFromDetails}
                 />
             )}
 
 
-        {currentView === "library" &&
-            currentUser && (
-                <MyMovies
-                    currentUser={currentUser}
-                    onMovieSelected={handleMovieSelected}
-                    onBack={handleBackToSearch}
-                />
-            )}
+        {currentUser && (currentView === "library" || currentView === "watchlist") && (
+            <MyMovies
+                key={`${currentUser.id}:${currentView}`}
+                currentUser={currentUser}
+                watchlistOnly={currentView === "watchlist"}
+                onMovieSelected={handleMovieSelected}
+                onBack={handleBackToSearch}
+            />
+        )}
+
+        {currentUser && currentView === "my-reviews" && (
+            <MyReviews
+                key={currentUser.id}
+                currentUser={currentUser}
+                onMovieSelected={handleMovieSelected}
+                onBack={handleBackToSearch}
+            />
+        )}
     </div>
 );
 

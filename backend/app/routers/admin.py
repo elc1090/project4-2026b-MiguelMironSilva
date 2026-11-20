@@ -4,10 +4,11 @@ from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.auth import get_current_superuser, invalid_credentials
+from app.auth import get_current_superuser
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import AdminUserResponse, UserResponse
+from app.services.account_deletion import account_write_transaction, delete_account
 
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -37,18 +38,24 @@ def list_users(current_user: CurrentSuperuser, db: Database, response: Response)
     ]
 
 
+@router.post("/users/{user_id}/promote", response_model=AdminUserResponse)
+def promote_user(user_id: SQLiteId, current_user: CurrentSuperuser, db: Database, response: Response):
+    actor_id = current_user.id
+    with account_write_transaction(db, actor_id) as actor:
+        get_current_superuser(actor)
+        target = db.get(User, user_id)
+        if target is None:
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuário não encontrado")
+        target.is_superuser = True
+        promoted = AdminUserResponse(id=str(target.id), username=target.username, is_superuser=True)
+    response.headers["Cache-Control"] = "no-store"
+    return promoted
+
+
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_user(user_id: SQLiteId, current_user: CurrentSuperuser, db: Database):
     actor_id = current_user.id
-    db.rollback()  # Release the authentication read transaction and expire cached data.
-    with db.begin():
-        # A SQLite transaction with a reserved writer lock serializes cross-deletion.
-        # If A deletes B first, B must fail this fresh actor check before deleting A.
-        connection = db.connection()
-        connection.exec_driver_sql("BEGIN IMMEDIATE")
-        actor = db.get(User, actor_id, populate_existing=True)
-        if actor is None:
-            raise invalid_credentials()
+    with account_write_transaction(db, actor_id) as actor:
         get_current_superuser(actor)
 
         if user_id == actor_id:
@@ -57,14 +64,5 @@ def delete_user(user_id: SQLiteId, current_user: CurrentSuperuser, db: Database)
         if target is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuário não encontrado")
 
-        # Fail closed if the database was not migrated: deleting from a bare
-        # INTEGER PRIMARY KEY table could allow a deleted JWT subject to return.
-        if not connection.exec_driver_sql("""
-            SELECT 1 FROM sqlite_master
-            WHERE type = 'table' AND name = 'users' AND instr(upper(sql), ' AUTOINCREMENT') > 0
-        """).scalar():
-            raise HTTPException(status.HTTP_503_SERVICE_UNAVAILABLE, "Migração de usuários pendente")
-
-        # User.movies cascades in the ORM; User.reviews cascades via its foreign key.
-        db.delete(target)
+        delete_account(db, target)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
