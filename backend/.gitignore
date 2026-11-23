@@ -3,6 +3,8 @@
 srv-string.txt
 atlas-credentials.env
 __pycache__/
+*.pyc
+*.pyo
 *.py[cod]
 .pytest_cache/
 .test-artifacts/
