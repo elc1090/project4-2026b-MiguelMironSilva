@@ -31,6 +31,11 @@ class User(Base):
         nullable=False,
     )
 
+    @property
+    def has_password(self) -> bool:
+        # An empty value explicitly marks Google-only accounts; it is not a hash.
+        return bool(self.password_hash)
+
     created_at: Mapped[datetime] = mapped_column( #tabela da data de criação da entrada
         DateTime(timezone=True),
         default=lambda: datetime.now(timezone.utc),

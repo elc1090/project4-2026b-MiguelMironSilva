@@ -66,19 +66,15 @@ def authenticate_user(
 
     user = db.scalar(statement)
 
-    if user is None:
-        return None
-
-    if not password_hash.verify(
-        password,
-        user.password_hash,
-    ):
+    if user is None or not verify_current_password(password, user.password_hash):
         return None
 
     return user
 
 
 def verify_current_password(password: str, stored_hash: str) -> bool:
+    if not stored_hash:
+        return False
     try:
         return password_hash.verify(password, stored_hash)
     except (UnknownHashError, UnicodeError):

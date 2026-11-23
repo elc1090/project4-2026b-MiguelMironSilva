@@ -8,7 +8,9 @@ getToken,
 login,
 logout,
 register,
+setToken,
 } from "./services/api.js";
+import { googleSignInError } from "./services/googleAuth.js";
 
 import Header from "./components/Header.jsx";
 import AuthPanel from "./components/AuthPanel.jsx";
@@ -22,7 +24,7 @@ import { canAccessAdmin } from "./services/adminPolicy.js";
 
 const NO_ACCOUNT_DELETION = { pending: false, error: null };
 
-function App() {
+function App({ googleCallback = null } = {}) {
 const [currentUser, setCurrentUser] = useState(null);
 const [currentMovie, setCurrentMovie] = useState(null);
 const [currentView, setCurrentView] = useState("search");
@@ -35,6 +37,7 @@ const authenticatedSession = useRef(null);
 const activeAccountDeletion = useRef(null);
 const [accountDeletion, setAccountDeletion] = useState(NO_ACCOUNT_DELETION);
 const [accountNotice, setAccountNotice] = useState(null);
+const [googleNotice, setGoogleNotice] = useState(null);
 const accountNoticeRef = useRef(null);
 
 const resetAccountSession = useCallback(() => {
@@ -78,27 +81,51 @@ const handleAdminAccessDenied = useCallback(async (status) => {
 useEffect(() => {
     let active = true;
     const token = getToken();
-    const restoreSession = async () => {
+    const revision = sessionRevision.current;
+    const isCurrent = () => active && sessionRevision.current === revision && getToken() === token;
+
+    const initializeSession = async () => {
         try {
-            const user = await getCurrentUser();
-            if (active && getToken() === token) {
-                authenticatedSession.current = token ? { token } : null;
-                setCurrentUser(user);
+            let googleError = googleCallback?.error;
+            if (googleCallback?.complete) {
+                try {
+                    const next = await googleCallback.complete();
+                    if (!isCurrent()) return;
+                    setToken(next.token);
+                    authenticatedSession.current = { token: next.token };
+                    setCurrentUser(next.user);
+                    return;
+                } catch {
+                    googleError = "failed";
+                }
             }
-        } catch (error) {
-            if (active && getToken() === token) {
-                clearToken();
-                setCurrentUser(null);
+
+            if (!isCurrent()) return;
+            let user = null;
+            if (token) {
+                try {
+                    user = await getCurrentUser({ token });
+                    if (!isCurrent()) return;
+                    authenticatedSession.current = { token };
+                    setCurrentUser(user);
+                } catch (error) {
+                    if (!isCurrent()) return;
+                    // A failed Google attempt is not evidence that the old session is invalid.
+                    if (!googleError || error.status === 401) clearToken();
+                }
+            }
+            if (googleError) {
+                setGoogleNotice(googleSignInError(googleError));
+                if (!user) setShowAuthPanel(true);
             }
         } finally {
             if (active) setIsInitializing(false);
         }
     };
 
-    if (token) restoreSession();
-    else setIsInitializing(false);
+    initializeSession();
     return () => { active = false; };
-}, []);
+}, [googleCallback]);
 
 
 const handleLogin = async (username, password) => {
@@ -113,6 +140,7 @@ const handleLogin = async (username, password) => {
     authenticatedSession.current = { token };
     setCurrentUser(user);
     setAccountNotice(null);
+    setGoogleNotice(null);
     setShowAuthPanel(false);
     setCurrentView((view) => view === "details" ? view : "search");
 };
@@ -160,12 +188,13 @@ const endSession = (notice = null) => {
     setCurrentMovie(null);
     setCurrentView("search");
     setAccountNotice(notice);
+    setGoogleNotice(null);
     setShowAuthPanel(notice?.kind === "login");
 };
 
 const handleDeleteAccount = async (password) => {
     const session = authenticatedSession.current;
-    if (!session || session.token !== getToken() || activeAccountDeletion.current) return;
+    if (currentUser?.has_password === false || !session || session.token !== getToken() || activeAccountDeletion.current) return;
 
     // The mutation belongs to the session, not the view: leaving Minha conta
     // must not prevent a completed deletion from signing that session out.
@@ -276,6 +305,8 @@ return (
                 {accountNotice.text}
             </p>
         )}
+
+        {googleNotice && <p className="account-notice" role="alert">{googleNotice}</p>}
 
         {showAuthPanel && (
             <AuthPanel

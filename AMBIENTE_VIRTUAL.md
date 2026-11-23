@@ -9,7 +9,7 @@ Abra o terminal na raiz do projeto e execute:
 ```powershell
 cd backend
 py -3.12 -m venv .venv
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate
 python -m pip install -r requirements.txt
 ```
 

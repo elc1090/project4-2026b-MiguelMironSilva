@@ -24,6 +24,17 @@ class UserResponse(AdminUserResponse):
     email: str
 
 
+class CurrentUserResponse(UserResponse):
+    has_password: bool = True
+
+
+class GoogleExchangeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    code: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
+    verifier: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
+
+
 class DeleteAccountRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

@@ -1,4 +1,4 @@
-const API_BASE_URL =
+export const API_BASE_URL =
 import.meta.env?.VITE_API_BASE_URL ||
 "http://127.0.0.1:8000/api";
 
@@ -24,10 +24,7 @@ sessionStorage.removeItem(TOKEN_KEY);
 // HELPERS DE REQUEST
 // ============================================================
 
-const getAuthHeaders = () => {
-const token = getToken();
-
-
+const getAuthHeaders = (token = getToken()) => {
 if (!token) {
     return {};
 }
@@ -148,20 +145,23 @@ return data;
 
 };
 
-export const getCurrentUser = async () => {
-const response = await fetch(
-`${API_BASE_URL}/auth/me`,
-{
-headers: {
-...getAuthHeaders(),
-},
-}
-);
+export const getGoogleSignInStatus = async ({ signal } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/auth/google/status`, { signal });
+    return parseResponse(response);
+};
 
+export const exchangeGoogleCode = async (code, verifier) => {
+    const response = await fetch(`${API_BASE_URL}/auth/google/exchange`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code, verifier }),
+    });
+    return parseResponse(response);
+};
 
-return parseResponse(response);
-
-
+export const getCurrentUser = async ({ token } = {}) => {
+    const response = await fetch(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders(token) });
+    return parseResponse(response);
 };
 
 export const deleteCurrentUser = async (password, { signal } = {}) => {

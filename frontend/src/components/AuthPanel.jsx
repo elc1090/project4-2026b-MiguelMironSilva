@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getGoogleSignInStatus } from "../services/api.js";
+import { startGoogleSignIn } from "../services/googleAuth.js";
 
 function PasswordField({ id, label, onValueChange, error, ...inputProps }) {
     const [isVisible, setIsVisible] = useState(false);
@@ -51,7 +53,40 @@ const [passwordMismatch, setPasswordMismatch] = useState(false);
 
 const [message, setMessage] = useState("");
 const [isSubmitting, setIsSubmitting] = useState(false);
+const [googleEnabled, setGoogleEnabled] = useState(false);
+const [isStartingGoogle, setIsStartingGoogle] = useState(false);
+const [googleError, setGoogleError] = useState("");
+const isBusy = isSubmitting || isStartingGoogle;
 
+useEffect(() => {
+    const controller = new AbortController();
+    getGoogleSignInStatus({ signal: controller.signal })
+        .then((status) => {
+            if (!controller.signal.aborted) setGoogleEnabled(status?.enabled === true);
+        })
+        .catch(() => { /* Google sign-in is optional; local auth stays available. */ });
+    const onPageShow = (event) => {
+        if (event.persisted) setIsStartingGoogle(false);
+    };
+    window.addEventListener("pageshow", onPageShow);
+    return () => {
+        controller.abort();
+        window.removeEventListener("pageshow", onPageShow);
+    };
+}, []);
+
+const handleGoogleSignIn = async () => {
+    if (isBusy) return;
+    setGoogleError("");
+    setMessage("");
+    setIsStartingGoogle(true);
+    try {
+        await startGoogleSignIn();
+    } catch {
+        setGoogleError("Não foi possível iniciar o login com Google. Verifique se a página está em uma conexão segura e tente novamente.");
+        setIsStartingGoogle(false);
+    }
+};
 
 const switchToLogin = () => {
     setMode("login");
@@ -68,6 +103,7 @@ const switchToRegister = () => {
 
 const handleLogin = async (event) => {
     event.preventDefault();
+    if (isBusy) return;
 
     setMessage("");
     setIsSubmitting(true);
@@ -94,6 +130,7 @@ const handleLogin = async (event) => {
 
 const handleRegister = async (event) => {
     event.preventDefault();
+    if (isBusy) return;
 
     setMessage("");
     if (registerPassword !== registerPasswordConfirmation) {
@@ -153,7 +190,7 @@ return (
                             : ""
                     }
                     onClick={switchToLogin}
-                    disabled={isSubmitting}
+                    disabled={isBusy}
                 >
                     Login
                 </button>
@@ -166,7 +203,7 @@ return (
                             : ""
                     }
                     onClick={switchToRegister}
-                    disabled={isSubmitting}
+                    disabled={isBusy}
                 >
                     Novo Usuario
                 </button>
@@ -210,7 +247,7 @@ return (
 
                     <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isBusy}
                     >
                         {isSubmitting
                             ? "Entrando..."
@@ -297,7 +334,7 @@ return (
 
                     <button
                         type="submit"
-                        disabled={isSubmitting}
+                        disabled={isBusy}
                     >
                         {isSubmitting
                             ? "Criando..."
@@ -307,6 +344,13 @@ return (
                 </form>
             )}
 
+
+            {googleEnabled && (
+                <button type="button" disabled={isBusy} onClick={handleGoogleSignIn}>
+                    {isStartingGoogle ? "Redirecionando…" : "Continuar com Google"}
+                </button>
+            )}
+            {googleError && <p className="auth-message" role="alert">{googleError}</p>}
 
             {message && (
                 <p className="auth-message">

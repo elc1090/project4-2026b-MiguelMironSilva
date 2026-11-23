@@ -8,6 +8,7 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import (
+    CurrentUserResponse,
     DeleteAccountRequest,
     TokenResponse,
     UserCreate,
@@ -104,7 +105,8 @@ def login(
 
 @router.get(
     "/me",
-    response_model=UserResponse,
+    response_model=CurrentUserResponse,
+    response_model_exclude_unset=True,
 )
 def get_me(
     current_user: Annotated[User, Depends(get_current_user)],
@@ -114,6 +116,7 @@ def get_me(
         "username": current_user.username,
         "email": current_user.email,
         "is_superuser": current_user.is_superuser,
+        **({"has_password": False} if not current_user.has_password else {}),
     }
 
 

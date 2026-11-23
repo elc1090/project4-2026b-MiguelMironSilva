@@ -70,6 +70,11 @@ Frontend
 - Frameworks: React.js + Vite
 - Hospedagem: Netlify
 
+#### Login com Google (opcional)
+
+No ambiente de desenvolvimento, abra o frontend em `http://localhost:5173` e use `http://127.0.0.1:8000/api/auth/google/callback` como URI de redirecionamento do cliente Web na Google Auth Platform. Configure `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no ambiente do backend, nunca no frontend. Para endereços diferentes, configure `FRONTEND_URL` (origem do frontend) e `GOOGLE_REDIRECT_URI` (callback exato no Google); `VITE_API_BASE_URL` deve usar a mesma origem pública do callback, com o prefixo `/api`.
+
+Antes de reiniciar a API, instale as dependências e aplique as migrações em `backend` com `python -m pip install -r requirements.txt` e `python -m alembic upgrade head`. Faça backup do SQLite antes de migrar um banco existente. Evite registrar a query string do callback em logs de acesso, pois ela contém o código de autorização.
 
 ## Referências e créditos
 

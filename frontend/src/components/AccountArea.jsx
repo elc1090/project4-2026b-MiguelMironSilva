@@ -37,7 +37,7 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
 
     function submitDelete(event) {
         event.preventDefault();
-        if (!isConfirming || pending || password === "") return;
+        if (user.has_password === false || !isConfirming || pending || password === "") return;
         onDelete(password);
         setPassword("");
     }
@@ -50,58 +50,64 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
             <h1 id={headingId} tabIndex={-1} ref={headingRef}>Minha conta</h1>
             <section className="account-card" aria-labelledby={dangerId}>
                 <h2 id={dangerId}>Excluir minha conta</h2>
-                <p id={warningId}>
-                    A conta de <strong>{user.username}</strong>, as suas resenhas (notas e textos) e os seus registros de filmes favoritos e assistidos serão excluídos permanentemente, não anonimizados.
-                    Sua lista Desejo assistir também será apagada. Suas notas deixarão de contar na média da comunidade.
-                    Essa ação não pode ser desfeita.
-                </p>
-                {pending && <p role="status">Excluindo sua conta…</p>}
-                {error && (
-                    <p id={errorId} role="alert" ref={errorRef} tabIndex={-1}>
-                        {deleteErrors[error] ?? "Não foi possível excluir sua conta. Tente novamente."}
-                    </p>
-                )}
-                <button
-                    className="account-delete-button"
-                    type="button"
-                    ref={deleteButtonRef}
-                    aria-describedby={warningId}
-                    hidden={isConfirming}
-                    disabled={pending}
-                    onClick={() => { onClearError(); setIsConfirming(true); }}
-                >
-                    Excluir minha conta
-                </button>
-                {isConfirming && (
-                    <form className="account-delete-form" onSubmit={submitDelete} aria-describedby={warningId}>
-                        <label htmlFor={passwordId}>Senha atual</label>
-                        <input
-                            id={passwordId}
-                            ref={passwordRef}
-                            type="password"
-                            name="password"
-                            autoComplete="current-password"
-                            value={password}
-                            onChange={(event) => { setPassword(event.target.value); onClearError(); }}
-                            aria-invalid={error === 403 ? true : undefined}
-                            aria-describedby={error === 403 ? errorId : undefined}
-                            required
+                {user.has_password === false ? (
+                    <p>Sua conta usa o login com Google e não tem senha. Para solicitar a exclusão, entre em contato com a administração.</p>
+                ) : (
+                    <>
+                        <p id={warningId}>
+                            A conta de <strong>{user.username}</strong>, as suas resenhas (notas e textos) e os seus registros de filmes favoritos e assistidos serão excluídos permanentemente, não anonimizados.
+                            Sua lista Desejo assistir também será apagada. Suas notas deixarão de contar na média da comunidade.
+                            Essa ação não pode ser desfeita.
+                        </p>
+                        {pending && <p role="status">Excluindo sua conta…</p>}
+                        {error && (
+                            <p id={errorId} role="alert" ref={errorRef} tabIndex={-1}>
+                                {deleteErrors[error] ?? "Não foi possível excluir sua conta. Tente novamente."}
+                            </p>
+                        )}
+                        <button
+                            className="account-delete-button"
+                            type="button"
+                            ref={deleteButtonRef}
+                            aria-describedby={warningId}
+                            hidden={isConfirming}
                             disabled={pending}
-                        />
-                        <div className="account-delete-actions">
-                            <button className="account-cancel-button" type="button" disabled={pending} onClick={() => {
-                                restoreDeleteFocus.current = true;
-                                setIsConfirming(false);
-                                setPassword("");
-                                onClearError();
-                            }}>
-                                Cancelar
-                            </button>
-                            <button className="account-delete-button" type="submit" disabled={pending || password === ""}>
-                                Confirmar exclusão definitiva
-                            </button>
-                        </div>
-                    </form>
+                            onClick={() => { onClearError(); setIsConfirming(true); }}
+                        >
+                            Excluir minha conta
+                        </button>
+                        {isConfirming && (
+                            <form className="account-delete-form" onSubmit={submitDelete} aria-describedby={warningId}>
+                                <label htmlFor={passwordId}>Senha atual</label>
+                                <input
+                                    id={passwordId}
+                                    ref={passwordRef}
+                                    type="password"
+                                    name="password"
+                                    autoComplete="current-password"
+                                    value={password}
+                                    onChange={(event) => { setPassword(event.target.value); onClearError(); }}
+                                    aria-invalid={error === 403 ? true : undefined}
+                                    aria-describedby={error === 403 ? errorId : undefined}
+                                    required
+                                    disabled={pending}
+                                />
+                                <div className="account-delete-actions">
+                                    <button className="account-cancel-button" type="button" disabled={pending} onClick={() => {
+                                        restoreDeleteFocus.current = true;
+                                        setIsConfirming(false);
+                                        setPassword("");
+                                        onClearError();
+                                    }}>
+                                        Cancelar
+                                    </button>
+                                    <button className="account-delete-button" type="submit" disabled={pending || password === ""}>
+                                        Confirmar exclusão definitiva
+                                    </button>
+                                </div>
+                            </form>
+                        )}
+                    </>
                 )}
             </section>
         </main>
