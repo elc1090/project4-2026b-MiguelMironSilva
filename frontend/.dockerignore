@@ -1,0 +1,20 @@
+# Allow only the production build inputs into Docker's context.
+**
+!package.json
+!package-lock.json
+!index.html
+!vite.config.js
+!nginx.conf
+!src/
+!src/**
+!public/
+!public/**
+
+**/.git
+**/.git/**
+**/node_modules
+**/node_modules/**
+**/.env*
+**/*.pem
+**/*.key
+**/.npmrc

@@ -33,6 +33,15 @@ Sem ativação, em Windows, substitua `python` por `.\.venv\Scripts\python.exe`.
 - Username ou email duplicado, identidade inválida, usuário ausente, senha divergente, confirmação incorreta, EOF/Ctrl+C ou falha de banco terminam com código diferente de zero. Falhas transacionais fazem rollback. Mensagens não exibem SQL, parâmetros, senhas ou hashes. Erros de argumentos também não reproduzem valores fornecidos.
 - Sucesso termina com código zero. A CLI exige confirmação mesmo para promoção já aplicada. Não inclui reset de senha, rebaixamento, listagem ou administração remota; execute recuperação/revogação somente por procedimento operacional autorizado, fora do escopo desta etapa.
 
+### Criação de superusuário via Docker
+
+Com o backend rodando no Docker, execute a mesma CLI do guia de superusuário dentro do contêiner.
+
+```powershell
+docker compose exec backend python -m app.cli create-superuser --username administrador --email admin@exemplo.com
+docker compose exec backend python -m app.cli promote-superuser --username EXISTENTE
+```
+
 ## Acesso pelo frontend
 
 Após criar ou promover a conta, faça login normalmente no aplicativo. O cabeçalho exibirá o selo **Superusuário** e o botão **Administração**. A área administrativa confirma o acesso no servidor antes de mostrar a identidade da conta. Se a sessão já estava aberta durante a promoção, atualize a página ou entre novamente para atualizar o papel exibido.

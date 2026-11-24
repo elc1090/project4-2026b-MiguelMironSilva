@@ -76,13 +76,16 @@ No ambiente de desenvolvimento, abra o frontend em `http://localhost:5173` e use
 
 Antes de reiniciar a API, instale as dependências e aplique as migrações em `backend` com `python -m pip install -r requirements.txt` e `python -m alembic upgrade head`. Faça backup do SQLite antes de migrar um banco existente. Evite registrar a query string do callback em logs de acesso, pois ela contém o código de autorização.
 
-#### Backend local com Docker Compose
+#### Aplicação local com Docker Compose
 
-1. Preencha `TMDB_API_KEY` e `JWT_SECRET_KEY` em `backend/.env`. Se ainda não tiver esse arquivo, use [o exemplo de configuração](<backend/.env.example>) como ponto de partida. As credenciais não vão na imagem.
-2. Na raiz do projeto, execute `docker compose up -d --build --wait backend`.
-3. Abra <http://127.0.0.1:8000/health> para conferir a API. O frontend continua fora do Compose.
+1. Preencha `TMDB_API_KEY` e `JWT_SECRET_KEY` no ambiente do backend. Se ainda não tiver `backend/.env`, use [o exemplo de configuração](<backend/.env.example>) como ponto de partida. Para testar o resumo por IA, configure também `GEMINI_API_KEY` e `GEMINI_MODEL`. Nenhuma dessas credenciais entra na imagem do frontend.
+2. Na raiz do projeto, execute `docker compose up -d --build --wait` (ou `docker compose up --build` para acompanhar os logs). Para iniciar apenas a API, acrescente `backend` ao comando.
+3. Abra <http://localhost:3000>. Os healthchecks podem ser conferidos em <http://localhost:3000/health> e <http://localhost:8000/health>. Use `localhost`, não `127.0.0.1`, para abrir o frontend no endereço padrão do Compose.
+4. Para validar a integração, busque um filme, entre na aplicação, publique uma resenha de teste com texto e gere o resumo. Para testar login com Google, cadastre o callback exato `http://localhost:8000/api/auth/google/callback` no cliente OAuth e forneça `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` ao backend.
 
-A API aplica as migrações antes de iniciar. Na primeira execução com um volume novo, o SQLite começa vazio; o banco do ambiente local não é copiado. `docker compose down` preserva o volume; `docker compose down -v` **apaga** os dados do contêiner. Para trocar a porta local, defina `BACKEND_PORT` ao executar o Compose e ajuste `VITE_API_BASE_URL` e, se usar login Google, o callback registrado e `GOOGLE_REDIRECT_URI`.
+O [Compose](<compose.yaml>) usa `http://localhost:8000/api` no build do Vite e permite `http://localhost:3000` no FastAPI. Para trocar as portas, defina `FRONTEND_PORT` ou `BACKEND_PORT` no ambiente do Compose (shell ou `.env` **na raiz**); os endereços locais padrão acompanham essas portas. Para usar outros endereços públicos, defina explicitamente `VITE_API_BASE_URL` (com `/api`), `FRONTEND_URL` e `GOOGLE_REDIRECT_URI` nesse mesmo ambiente. O Compose define as duas URLs do backend acima dos valores de `backend/.env`. Recompile a imagem do frontend após alterar `VITE_API_BASE_URL` e atualize o callback cadastrado no Google se ele mudar.
+
+A API migra o SQLite antes de iniciar. Com um volume novo, o banco começa vazio e o banco local não é copiado. `docker compose down` preserva o volume; `docker compose down -v` **apaga** os dados do contêiner.
 
 ## Referências e créditos
 
