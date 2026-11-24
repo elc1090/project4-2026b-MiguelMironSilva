@@ -1,16 +1,6 @@
 # Projeto final
 
-> 1. Leia com atenção as instruções abaixo para editar este README em formato Markdown.
-> 2. Substitua todos os trechos de texto iniciados com "Substitua" por informações do seu projeto, conforme solicitado em cada trecho.
-> 3. Substitua a imagem animada por um GIF/WEBP mostrando o resultado do seu projeto (o arquivo pode ser armazenado no repositório ou em URL externa). 
-> 4. Remova todas as instruções de entrega.
-> 5. Renomeie esta arquivo para README.md e entregue-o dentro da pasta raiz do seu repositório de entrega. 
-> 6. Double-check: Certifique-se de que seu README.md não contenha instruções de entrega e seja visualizado corretamente ao abrir seu repositório!
-> Opcional: você pode alterar a formatação deste README, mas mantenha todas as informações solicitadas.
-
-![Substitua a imagem ao lado por um GIF/WEBP animado mostrando seu projeto](./moho_follow_through2.gif "GIF animado do projeto. Imagem temporária de Moho Animation https://moho.lostmarble.com/products/moho-pro-special-halls-head-college")
-
-
+![Animacao](frontend/public/images/animacao_projeto2.gif)
 
 ## Acesso
 
@@ -19,6 +9,7 @@ Substitua este texto pela URL para acesso ao seu app publicado. Adicione a URL t
 
 ## Desenvolvedor(a) / Desenvolvedor(es/as)
 - [Miguel Miron Silva](misilva@inf.ufsm.br)
+- [E-Mail Pessoal](miguelmironsilva@gmail.com)
 
 
 ## Proposta
@@ -36,11 +27,24 @@ Substitua este texto pela URL para acesso ao seu app publicado. Adicione a URL t
 
 ### Processo
 
-Substitua este texto (toda a seção) por uma descrição do processo de desenvolvimento **em primeira pessoa, sem ajuda de IA**.
+**Semana 1 (04/11/26 - 08/11/26)** 
+- Compleção do modelo de superusuário e adoção da ferramenta de migração Alembic para atualizar as tabelas com o superusuário, a partir de sugestões do GPT 6.1 Sol. Isso faz possível a adição de novas tabelas preservando os dados, e adicionando flags que sinalizam que um usuário é superusuário. Várias pequenas correções feitas
+- Implementação do superusuário no frontend e no backend de maneira definitiva. Contas de superusuário podem ser criadas localmente "por fora", com o backend cuidando da autenticação do superusuário e o frontend exibindo funcionalidades extras (área administrativa) para o superusuário.
 
-Para trabalhos em dupla, explicar primeiramente como a dupla se organizou para realizar o trabalho: se houve ou não uma divisão, quem fez o quê, etc.
+**Semana 2 (09/11/26 - 15/11/26)** 
+- Implementação das resenhas, ligadas ao autor e a ID do filme. Cada usuário autenticado pode publicar uma avaliação por filme, com nota de 0 a 10, texto de até 2.000 caracteres ou ambos, e pode editar ou excluir a própria publicação. Visitantes podem consultar as avaliações. Favoritos e marcações de filmes assistidos continuam privados e independentes das avaliações. Notas antigas transferidas para o novo formato. Inspirado pelo Western Reels de Rafael Klaue.
+- Sistema de superusuário combinado com o de resenhas: Superusuários podem moderar resenhas excluindo-as.
+- Exclusão de contas adicionada. Superusuários podem excluir outras contas, apagando todos os seus outros dados (resenhas, filmes favoritos, etc) junto.
+- Correções aplicadas ao formulário de autenticação (confirmação da senha pedida, visualização da senha), cálculo da nota da comunidade a partir das notas das resenhas.
+- Autoexclusão das contas adicionada, pedindo a senha para excluir e excluindo tudo do usuário. O último superusuário é proibido de se autoexcluir.
 
-Cada pessoa deve explicar e justificar suas escolhas, destacando o que já sabia ou não, como lidou com dúvidas ou dificuldades específicas, que adaptações foram necessárias, etc. Evitar comentários genéricos como "pedi ajuda para IA e resolvi", dando preferência para expor detalhes específicos de um problema e sua solução.
+**Semana 3 (16/11/26 - 23/11/26)** 
+- Melhoras na interface: Adição de lista de visualização de resenhas pessoais e lista de filmes que desejo assistir. Superusuários podem promover usuários à superusuários na área administrativa.
+- Implementação da autenticação via Google API, com OAuth 2.0, inspirado no [exemplo passado na aula](https://github.com/elc1090/demo-auth-profile). O backend valida a identidade no Google e usa um código de uso único para iniciar uma sessão com o JWT da própria aplicação. No primeiro acesso, o sistema cria uma conta comum sem senha local e usa o identificador do Google para reconhecê-la nos acessos seguintes. Se o e-mail já estiver cadastrado, o login informa o conflito e preserva a conta existente. Contas criadas pelo Google precisam solicitar a exclusão à administração.
+- Implementação do sumário de resenhas através de IA. Chave de API do Gemini gerada para o projeto, com o modelo Gemini-3.5-flash-lite sendo escolhido para ser usado. Usuários autenticados podem acionar o recurso quando há resenhas escritas, e a interface avisa que os textos serão enviados ao Google e exibe o resultado identificado como gerado por IA, com a contagem de resenhas analisadas. O backend envia apenas os textos e orienta o Gemini a destacar elogios, críticas e divergências, evitando spoilers. Avaliações sem texto continuam compondo a nota da comunidade, e a edição, publicação ou exclusão de uma avaliação na mesma tela remove o resumo anterior.
+- Contaneirização do Backend, seguindo os [exemplos em aula](https://github.com/elc1090/demo-backend-auth) de número 2, 5 e 6. Prisma/Node substituido por Alembic/Uvicorn, e o Dockerfile Node/Express pelo Dockerfile Python (presente no exemplo 2). Docker e Docker Compose usados, compose.yaml reaproveitado para publicar a API. Um volume novo recebe um banco vazio, preservando o banco local.
+- Contaneirização do Frontend, integrando também o exemplo de número 9, sem o supabase. Com o Node 24 gerando o bundle de produção, e o Nginx servindo os arquivos estáticos. Contexto de build do frontend integrando ao compose.yaml.
+- Frontend refatorado.
 
 ### Trechos de código
 
@@ -51,24 +55,29 @@ Substitua este texto por uma indicação de pelo menos 3 trechos de código que 
 
 ### Linguagens e afins
 
-Substitua este texto por uma lista detalhada de tecnologias utilizadas:
-- ...
-- ...
-- 
+Backend
+- Linguagem: [Python](https://docs.python.org/3/)
+- Framework: [FastAPI](https://devdocs.io/fastapi/) 
+- Banco de dados: [SQLite](https://devdocs.io/sqlite/) + [SQLAlchemy](https://docs.sqlalchemy.org/en/20/)
+- Servidor web local: [Uvicorn](https://uvicorn.dev/)
+- Migração de banco: [Alembic](https://alembic.sqlalchemy.org/en/latest/)
+- Hospedagem: [Render](https://render.com/)
+
+Frontend
+- [HTML5](https://devdocs.io/html/) + [CSS3](https://devdocs.io/css/) + [JavaScript/TypeScript](https://devdocs.io/javascript/) 
+- Frameworks: [React.js](https://devdocs.io/react/) + [Vite](https://devdocs.io/vite/) 
+- Servidor web do frontend para Docker: [Nginx](https://nginx.org/) + [Node.js 24](https://nodejs.org/pt-br/blog/release/v24.0.0)
+- Hospedagem: [Netlify](https://app.netlify.com/)
 
 
 ### Ambiente de desenvolvimento
 
-Backend
-- Linguagem: Python
-- Framework: FastAPI
-- Banco de dados: SQLAlchemy + SQLite
-- Hospedagem: Render
+- [Git](https://git-scm.com/)
+- [Sublime Text Editor](https://www.sublimetext.com/)
+- [Docker Desktop](https://www.docker.com)
+- IA usada para planejamento, tirada de dúvidas e debugging: [GPT-6.1 Sol](https://openai.com)
 
-Frontend
-- HTML5 + CSS3 + JavaScript
-- Frameworks: React.js + Vite
-- Hospedagem: Netlify
+
 
 #### Login com Google (opcional)
 
@@ -89,12 +98,16 @@ A API migra o SQLite antes de iniciar. Com um volume novo, o banco começa vazio
 
 ## Referências e créditos
 
-- [Western Reels — projeto de rpklaue](https://github.com/elc1090/project2-2026b-rpklaue): referência para o formulário de resenhas nos detalhes do filme e para o fluxo de criar, editar e excluir. Neste projeto a resenha é um registro público independente da biblioteca pessoal, com uma resenha por usuário e filme.
+Webapp para busca de filmes - projeto original
+- https://github.com/mmj030703/Movie-Search-App/
+- https://movie-search-app-weld.vercel.app/
 
-Substitua este trecho por uma lista bem detalhada de todo material consultado para ajudar no projeto, por exemplo:  URLs de vídeos ou outro material consultado, créditos para colegas que colaboraram, geradores de código, etc.
-- ...
-- ...
+Webapp para busca de filmes, com funcionalidades adicionais
+- https://github.com/elc1090/project1-2026b-gabriel-maroneze
+- https://elc1090.github.io/project1-2026b-gabriel-maroneze/
 
+Inspiração para o sistema de reviews
+- https://github.com/elc1090/project2-2026b-rpklaue
 
 
 
