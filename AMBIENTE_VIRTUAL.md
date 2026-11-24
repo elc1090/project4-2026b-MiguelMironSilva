@@ -38,7 +38,7 @@ Ainda dentro de `backend`, com o ambiente ativado:
 
 ```powershell
 python -m alembic upgrade head
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
 ```
 
 **Banco existente:** pare a aplicação e faça backup consistente antes da migração; veja o [guia de migrações](<backend/MIGRACOES.md>). Execute sempre a partir de `backend`: o caminho do SQLite e a leitura das credenciais dependem desse diretório. `--reload` é destinado ao desenvolvimento.

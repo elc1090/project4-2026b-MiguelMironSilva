@@ -76,6 +76,14 @@ No ambiente de desenvolvimento, abra o frontend em `http://localhost:5173` e use
 
 Antes de reiniciar a API, instale as dependências e aplique as migrações em `backend` com `python -m pip install -r requirements.txt` e `python -m alembic upgrade head`. Faça backup do SQLite antes de migrar um banco existente. Evite registrar a query string do callback em logs de acesso, pois ela contém o código de autorização.
 
+#### Backend local com Docker Compose
+
+1. Preencha `TMDB_API_KEY` e `JWT_SECRET_KEY` em `backend/.env`. Se ainda não tiver esse arquivo, use [o exemplo de configuração](<backend/.env.example>) como ponto de partida. As credenciais não vão na imagem.
+2. Na raiz do projeto, execute `docker compose up -d --build --wait backend`.
+3. Abra <http://127.0.0.1:8000/health> para conferir a API. O frontend continua fora do Compose.
+
+A API aplica as migrações antes de iniciar. Na primeira execução com um volume novo, o SQLite começa vazio; o banco do ambiente local não é copiado. `docker compose down` preserva o volume; `docker compose down -v` **apaga** os dados do contêiner. Para trocar a porta local, defina `BACKEND_PORT` ao executar o Compose e ajuste `VITE_API_BASE_URL` e, se usar login Google, o callback registrado e `GOOGLE_REDIRECT_URI`.
+
 ## Referências e créditos
 
 - [Western Reels — projeto de rpklaue](https://github.com/elc1090/project2-2026b-rpklaue): referência para o formulário de resenhas nos detalhes do filme e para o fluxo de criar, editar e excluir. Neste projeto a resenha é um registro público independente da biblioteca pessoal, com uma resenha por usuário e filme.

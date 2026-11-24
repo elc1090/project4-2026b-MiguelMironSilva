@@ -1,0 +1,12 @@
+# Only send inputs required by the image build.
+**
+!requirements.txt
+!alembic.ini
+!alembic/
+!alembic/**
+!app/
+!app/**
+!entrypoint.sh
+
+**/__pycache__/
+**/*.py[cod]

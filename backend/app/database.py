@@ -1,8 +1,10 @@
-from sqlalchemy import create_engine
-from sqlalchemy.orm import DeclarativeBase, sessionmaker
-from sqlalchemy import event
+import os
 
-DATABASE_URL = "sqlite:///./webapp_filmes.db"
+from sqlalchemy import create_engine, event
+from sqlalchemy.orm import DeclarativeBase, sessionmaker
+
+SQLITE_DB_PATH = os.environ.get("SQLITE_DB_PATH", "./webapp_filmes.db")
+DATABASE_URL = f"sqlite:///{SQLITE_DB_PATH}"
 
 engine = create_engine(
     DATABASE_URL,
