@@ -12,3 +12,4 @@ REGRAS_DE_ACESSO.md
 MIGRACOES.md
 tests/
 requirements-test.txt
+webapp_filmes.db
