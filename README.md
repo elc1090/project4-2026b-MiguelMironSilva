@@ -1,11 +1,10 @@
 # Projeto final
 
-![Animacao](frontend/public/images/animacao_projeto2.gif)
+![Animacao](frontend/public/images/animacao_projeto4.gif)
 
 ## Acesso
 
-Substitua este texto pela URL para acesso ao seu app publicado. Adicione a URL também na seção "About" do seu repositório no GitHub.
-
+https://projeto4miguel.netlify.app/
 
 ## Desenvolvedor(a) / Desenvolvedor(es/as)
 - [Miguel Miron Silva](misilva@inf.ufsm.br)
@@ -48,8 +47,55 @@ Substitua este texto pela URL para acesso ao seu app publicado. Adicione a URL t
 
 ### Trechos de código
 
-Substitua este texto por uma indicação de pelo menos 3 trechos de código que você(s) queira(m) destacar para a turma (por exemplo, para explicar algo que aprendeu, para alertar sobre alguma dificuldade de compreensão, para mostrar uma curiosidade, etc).
+**Deleção de resenha:**
 
+````
+@router.delete("/{review_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_review(tmdb_id: SQLiteId, review_id: SQLiteId, db: Database, current_user: CurrentUser):
+    """Remove a resenha (nota e texto) como autor ou superusuário."""
+    review = _find_review(db, tmdb_id, review_id)
+    if review.user_id != current_user.id and not current_user.is_superuser:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Apenas o autor ou um superusuário pode excluir esta resenha")
+    db.delete(review)
+    db.commit()
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+````
+Só o usuário logado ``current_user`` ou um  superusuário ``superuser`` podem deletar avaliações de filmes.
+
+**Login no Google:**
+
+````
+def consume_attempt(db: Session, state: str, browser_secret: str):
+    result = db.execute(delete(GoogleLoginAttempt).where(
+        GoogleLoginAttempt.state_hash == digest(state),
+        GoogleLoginAttempt.browser_hash == digest(browser_secret),
+        GoogleLoginAttempt.expires_at > int(time.time()),
+    ).returning(
+        GoogleLoginAttempt.nonce, GoogleLoginAttempt.google_verifier,
+        GoogleLoginAttempt.frontend_challenge,
+    )).one_or_none()
+    db.commit()
+    return result
+````
+Essa função valida e consome uma tentativa de login com Google quando o navegador retorna ao backend. Ela só encontra a tentativa se o ``state`` recebido do Google corresponder ao registrado no início do login, o segredo do cookie corresponder ao do navegador que iniciou o fluxo e o prazo ainda estiver válido.
+
+O ``delete`` e o ``returning`` apagam a tentativa e devolvem, na mesma operação, os dados necessários para continuar o login. O ``nonce`` é usado para conferir o token do Google, o ``google_verifier`` para trocar o código de autorização com Proof Key for Code Exchange que vincula o código de autorização a quem iniciou o login, e o ``frontend_challenge`` para vincular a etapa final à aba que iniciou o login.
+
+O ``db.commit()`` confirma a exclusão, garantindo que a tentativa seja usada uma única vez. Se nenhuma linha atender às três condições, a função retorna None.
+
+
+**Resumo com Gemini:**
+````
+@router.post("/summary", response_model=ReviewSummaryResponse)
+def summarize_reviews(tmdb_id: SQLiteId, db: Database, _current_user: CurrentUser):
+    rows = db.scalars(
+        select(Review.text)
+        .where(Review.tmdb_id == tmdb_id, Review.text.is_not(None))
+        .order_by(Review.id)
+    ).all()
+    texts = [text for text in rows if text and text.strip()]
+````
+A consulta lê apenas a coluna de texto das resenhas daquele filme. A última linha descarta textos vazios, deixando para o Gemini apenas as opiniões escritas. Notas e dados dos autores ficam fora do envio.
 
 ## Tecnologias
 

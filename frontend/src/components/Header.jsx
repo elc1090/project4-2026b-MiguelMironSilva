@@ -20,8 +20,8 @@ function Header({
         <header className="site-header">
             <div className="header-inner page-shell">
                 <button type="button" className="site-brand" onClick={onSearch} aria-label="Miguel Cinema — início">
-                    <span className="brand-icon"><FilmMark /></span>
-                    <span>Miguel <strong>Cinema</strong><small>CLUBE DE FILMES</small></span>
+                    <span className="brand-icon"><img src={`${import.meta.env.BASE_URL}images/cinema-mark.svg`} alt="" width={28} height={28} /></span>
+                    <span>Miguel <strong>Cinema</strong><small>DATABASE DE FILMES</small></span>
                 </button>
 
                 <nav className="primary-nav" aria-label="Navegação principal">

@@ -10,7 +10,7 @@ Abra o terminal na raiz do projeto e execute:
 cd backend
 py -3.12 -m venv .venv
 python.exe -m pip install -r requirements.txt
-.\.venv\Scripts\Activate.ps1
+.\.venv\Scripts\Activate
 ```
 
 Se `.venv` já existir e estiver funcionando, pule sua criação. Se `py` não estiver disponível, use `python -m venv .venv`, verificando antes a versão com `python --version`.

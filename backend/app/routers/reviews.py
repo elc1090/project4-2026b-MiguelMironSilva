@@ -49,7 +49,6 @@ def summarize_reviews(tmdb_id: SQLiteId, db: Database, _current_user: CurrentUse
         .order_by(Review.id)
     ).all()
     texts = [text for text in rows if text and text.strip()]
-    # This route is read-only; release the connection before waiting on Gemini.
     db.rollback()
 
     if not texts:
@@ -85,7 +84,6 @@ def create_review(tmdb_id: SQLiteId, data: ReviewWrite, db: Database, current_us
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        # Translate only this pair's unique violation, including concurrent inserts.
         if (
             isinstance(exc.orig, sqlite3.IntegrityError)
             and getattr(exc.orig, "sqlite_errorcode", None) == sqlite3.SQLITE_CONSTRAINT_UNIQUE

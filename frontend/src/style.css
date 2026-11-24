@@ -151,13 +151,15 @@ a { color: var(--accent); text-underline-offset: .2em; }
 }
 .site-brand:hover:not(:disabled) { background: transparent; color: var(--accent); }
 .brand-icon {
+    width: 48px;
+    height: 40px;
     display: grid;
     place-items: center;
     width: 42px;
     aspect-ratio: 1;
     flex: none;
     border-radius: 10px;
-    background: var(--accent);
+    background: transparent;
     color: var(--on-accent);
 }
 .brand-icon svg { width: 30px; }
