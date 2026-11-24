@@ -24,6 +24,11 @@ class ReviewAuthor(BaseModel):
     username: str
 
 
+class ReviewSummaryResponse(BaseModel):
+    summary: str | None
+    review_count: int = Field(ge=0)
+
+
 class ReviewResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

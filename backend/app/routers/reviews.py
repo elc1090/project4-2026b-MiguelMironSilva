@@ -11,7 +11,8 @@ from app.auth import get_current_user
 from app.database import get_db
 from app.models.review import Review
 from app.models.user import User
-from app.schemas.reviews import ReviewResponse, ReviewWrite
+from app.schemas.reviews import ReviewResponse, ReviewSummaryResponse, ReviewWrite
+from app.services.review_summary import ReviewSummaryError, summarize_review_texts
 
 
 router = APIRouter(prefix="/api/movies/{tmdb_id}/reviews", tags=["reviews"])
@@ -37,6 +38,27 @@ def list_reviews(tmdb_id: SQLiteId, db: Database):
         .where(Review.tmdb_id == tmdb_id)
         .order_by(Review.created_at.desc(), Review.id.desc())
     ).all()
+
+
+@router.post("/summary", response_model=ReviewSummaryResponse)
+def summarize_reviews(tmdb_id: SQLiteId, db: Database, _current_user: CurrentUser):
+    rows = db.scalars(
+        select(Review.text)
+        .where(Review.tmdb_id == tmdb_id, Review.text.is_not(None))
+        .order_by(Review.id)
+    ).all()
+    texts = [text for text in rows if text and text.strip()]
+    # This route is read-only; release the connection before waiting on Gemini.
+    db.rollback()
+
+    if not texts:
+        return ReviewSummaryResponse(summary=None, review_count=0)
+
+    try:
+        summary = summarize_review_texts(texts)
+    except ReviewSummaryError as exc:
+        raise HTTPException(exc.status_code, exc.detail) from None
+    return ReviewSummaryResponse(summary=summary, review_count=len(texts))
 
 
 @personal_router.get("/mine", response_model=list[ReviewResponse])

@@ -11,6 +11,8 @@ class Settings(BaseSettings):
     google_client_secret: SecretStr = SecretStr("")
     google_redirect_uri: str = "http://127.0.0.1:8000/api/auth/google/callback"
     frontend_url: str = "http://localhost:5173"
+    gemini_api_key: SecretStr = SecretStr("")
+    gemini_model: str = ""
 
     @field_validator("google_redirect_uri", "frontend_url")
     @classmethod

@@ -758,7 +758,8 @@ RESENHAS DO FILME
 }
 
 .movie-review-list article,
-.movie-review-form {
+.movie-review-form,
+.movie-review-summary {
     display: grid;
     gap: .65rem;
     padding: 1rem;

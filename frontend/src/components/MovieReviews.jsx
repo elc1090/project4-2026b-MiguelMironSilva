@@ -4,6 +4,7 @@ import {
     deleteMovieReview,
     getMovieReviews,
     getToken,
+    summarizeMovieReviews,
     updateMovieReview,
 } from "../services/api.js";
 
@@ -78,12 +79,32 @@ function reviewErrorMessage(error, operation) {
     }
 }
 
-function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
+function summaryErrorMessage(status) {
+    switch (status) {
+        case 401:
+            return "Sua sessão expirou. Entre novamente para gerar o resumo.";
+        case 413:
+            return "O volume de texto das resenhas excede o limite para gerar um resumo.";
+        case 502:
+        case 503:
+            return "O serviço de resumo está indisponível no momento. Tente novamente mais tarde.";
+        case 504:
+            return "O serviço de resumo demorou a responder. Tente novamente.";
+        default:
+            return "Não foi possível gerar o resumo. Tente novamente.";
+    }
+}
+
+function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
     const titleId = useId();
     const textId = useId();
     const ratingId = useId();
     const deleteWarningId = useId();
+    const summaryTitleId = useId();
+    const summaryDisclosureId = useId();
     const [list, setList] = useState(LOADING);
+    const [summary, setSummary] = useState(null);
+    const activeSummary = useRef(null);
     const [loadAttempt, setLoadAttempt] = useState(0);
     const [draft, setDraft] = useState("");
     const [ratingDraft, setRatingDraft] = useState("");
@@ -118,16 +139,54 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
         return () => controller.abort();
     }, [movieId, loadAttempt]);
 
-    useEffect(() => () => activeWrite.current?.abort(), []);
+    useEffect(() => () => {
+        activeWrite.current?.abort();
+        activeSummary.current?.abort();
+    }, []);
 
     const ownReview = userId == null ? null : list.reviews?.find(
         (review) => review.author.id === userId,
     );
-    const sessionExpired = notice?.status === 401;
+    const reviewSessionExpired = notice?.status === 401;
+    const summarySessionExpired = summary?.status === 401;
+    const sessionExpired = reviewSessionExpired || summarySessionExpired;
+    const canSummarize = Boolean(token && list.reviews?.some(
+        ({ text }) => typeof text === "string" && text.trim() !== "",
+    ));
     const trimmed = draft.trim();
     const length = Array.from(trimmed).length;
 
+    function invalidateSummary() {
+        activeSummary.current?.abort();
+        activeSummary.current = null;
+        setSummary(null);
+    }
+
+    async function requestSummary() {
+        if (!canSummarize || sessionExpired || token !== getToken() || activeSummary.current || activeWrite.current) return;
+        const controller = new AbortController();
+        const { signal } = controller;
+        activeSummary.current = controller;
+        const isCurrent = () => !signal.aborted && activeSummary.current === controller && getToken() === token;
+        setSummary({ loading: true });
+
+        try {
+            const result = await summarizeMovieReviews(movieId, { signal });
+            if (!isCurrent()) return;
+            if (!result || (result.summary !== null && typeof result.summary !== "string") ||
+                !Number.isInteger(result.review_count) || result.review_count < 0) {
+                throw new Error("Resposta de resumo inválida.");
+            }
+            setSummary({ result });
+        } catch (error) {
+            if (isCurrent()) setSummary({ status: error.status, error: summaryErrorMessage(error.status) });
+        } finally {
+            if (activeSummary.current === controller) activeSummary.current = null;
+        }
+    }
+
     function retryList() {
+        invalidateSummary();
         setList(LOADING);
         setLoadAttempt((attempt) => attempt + 1);
     }
@@ -190,6 +249,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
                 }));
             }
 
+            invalidateSummary();
             if (!isDelete || deletesOwnReview) resetForm();
             setNotice({ text: {
                 create: "Avaliação publicada.",
@@ -200,6 +260,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
             if (!isCurrent()) return;
             setNotice({ error: true, status: error.status, text: reviewErrorMessage(error, operation) });
             if ([401, 403, 404, 409].includes(error.status)) setDeleteTargetId(null);
+            if (error.status === 401) invalidateSummary();
             if ([403, 404, 409].includes(error.status)) {
                 if (!isDelete || deletesOwnReview) resetForm();
                 retryList();
@@ -219,6 +280,46 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
         <section className="movie-reviews" aria-labelledby={titleId}>
             <h2 id={titleId}>Resenhas e avaliações</h2>
             {list.reviews && <CommunityRating reviews={list.reviews} />}
+            {canSummarize && !reviewSessionExpired && (
+                <section className="movie-review-summary" aria-labelledby={summaryTitleId}>
+                    <h3 id={summaryTitleId}>Resumo das resenhas</h3>
+                    {!summarySessionExpired && (
+                        <>
+                            <p id={summaryDisclosureId}>
+                                Ao solicitar um resumo, os textos públicos das resenhas deste filme serão enviados ao Google.
+                            </p>
+                            <div className="movie-review-actions">
+                                <button type="button" aria-describedby={summaryDisclosureId}
+                                    disabled={!!pending || !!summary?.loading} onClick={requestSummary}>
+                                    Resumir resenhas com IA
+                                </button>
+                            </div>
+                        </>
+                    )}
+                    <div aria-live="polite" aria-atomic="true">
+                        {summary?.loading && <p>Gerando resumo...</p>}
+                        {summary?.result && (
+                            <>
+                                {summary.result.summary?.trim() ? (
+                                    <>
+                                        <p><strong>Resumo gerado por IA</strong></p>
+                                        <p className="movie-review-text">{summary.result.summary}</p>
+                                    </>
+                                ) : <p>Nenhum resumo disponível para as resenhas deste filme.</p>}
+                                <p>Resenhas consideradas: {summary.result.review_count}</p>
+                            </>
+                        )}
+                    </div>
+                    {summary?.error && (
+                        <div>
+                            <p role="alert">{summary.error}</p>
+                            {summarySessionExpired && onLogin && (
+                                <button type="button" onClick={onLogin}>Entrar novamente</button>
+                            )}
+                        </div>
+                    )}
+                </section>
+            )}
             {userId == null && (
                 <p>
                     Entre para avaliar ou escrever uma resenha sobre este filme.
@@ -228,7 +329,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
             {notice && (
                 <p role={notice.error ? "alert" : "status"}>
                     {notice.text}
-                    {sessionExpired && onLogin && (
+                    {reviewSessionExpired && onLogin && (
                         <> <button type="button" onClick={onLogin}>Entrar novamente</button></>
                     )}
                 </p>
@@ -328,11 +429,12 @@ function ReviewsForSession({ movieId, userId, isSuperuser, onLogin }) {
 }
 
 export default function MovieReviews({ movieId, currentUser, onLogin }) {
-    // Discard old drafts, confirmations and mutations when the film or session scope changes.
+    // Discard old drafts, mutations and summaries when the film or session scope changes.
     if (!movieId) return null;
     const userId = currentUser?.id;
     const isSuperuser = currentUser?.is_superuser === true;
-    const scope = JSON.stringify([movieId, userId, isSuperuser]);
+    const token = userId != null && typeof sessionStorage !== "undefined" ? getToken() : null;
+    const scope = JSON.stringify([movieId, userId, isSuperuser, token]);
     return <ReviewsForSession key={scope} movieId={movieId} userId={userId}
-        isSuperuser={isSuperuser} onLogin={onLogin} />;
+        isSuperuser={isSuperuser} token={token} onLogin={onLogin} />;
 }

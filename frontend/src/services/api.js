@@ -275,6 +275,15 @@ export const getMovieReviews = async (tmdbId, { signal } = {}) => {
     return parseResponse(response);
 };
 
+export const summarizeMovieReviews = async (tmdbId, { signal } = {}) => {
+    const response = await fetch(`${movieReviewsUrl(tmdbId)}/summary`, {
+        method: "POST",
+        headers: getAuthHeaders(),
+        signal,
+    });
+    return parseResponse(response);
+};
+
 const writeMovieReview = async (url, method, review, signal) => {
     const headers = getAuthHeaders();
     if (review !== undefined) headers["Content-Type"] = "application/json";
