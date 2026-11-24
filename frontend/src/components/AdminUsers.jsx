@@ -111,13 +111,19 @@ export default function AdminUsers({ viewerId, token, onAccessDenied }) {
     }
 
     return (
-        <section className="admin-users" aria-labelledby={headingId}>
-            <h2 id={headingId}>Gerenciar usuários</h2>
+        <section className="panel-surface admin-users" aria-labelledby={headingId}>
+            <div className="admin-users-heading">
+                <div>
+                    <p className="eyebrow">Diretório</p>
+                    <h2 id={headingId}>Gerenciar usuários</h2>
+                </div>
+                {list.users && <span className="panel-count">{list.users.length} {list.users.length === 1 ? "conta" : "contas"}</span>}
+            </div>
             {notice && <p role={notice.error ? "alert" : "status"}>{notice.text}</p>}
             {list.error ? (
                 <div>
                     <p role="alert">{list.error}</p>
-                    <button className="movie-back-btn" type="button" onClick={reloadUsers}>Tentar novamente</button>
+                    <button className="button-secondary" type="button" onClick={reloadUsers}>Tentar novamente</button>
                 </div>
             ) : !list.users ? (
                 <p role="status">Carregando usuários...</p>
@@ -132,16 +138,16 @@ export default function AdminUsers({ viewerId, token, onAccessDenied }) {
                         return (
                             <li key={user.id}>
                                 <div className="admin-user-row">
-                                    <div>
-                                        <strong>{user.username}</strong>{isOwn && " (você)"}
-                                        <span className="admin-user-role">
+                                    <div className="admin-user-meta">
+                                        <div><strong>{user.username}</strong>{isOwn && " (você)"}</div>
+                                        <span className={`admin-user-role${user.is_superuser ? " is-superuser" : ""}`}>
                                             {user.is_superuser ? "Superusuário" : "Usuário comum"}
                                         </span>
                                     </div>
                                     {!isOwn && !action && (
                                         <div className="admin-delete-actions">
                                             {!user.is_superuser && (
-                                                <button className="admin-cancel-button" type="button" disabled={pending}
+                                                <button className="button-secondary admin-cancel-button" type="button" disabled={pending}
                                                     aria-label={`Promover ${user.username} a superusuário`}
                                                     onClick={() => askConfirmation(user.id, "promote")}>
                                                     Promover a superusuário
@@ -156,7 +162,7 @@ export default function AdminUsers({ viewerId, token, onAccessDenied }) {
                                     )}
                                 </div>
                                 {!isOwn && action && (
-                                    <div className="admin-delete-confirmation">
+                                    <div className={`admin-delete-confirmation${promoting ? " is-promoting" : ""}`}>
                                         <p id={warningId}>
                                             {promoting ? (
                                                 <>Promover <strong>{user.username}</strong> a superusuário? A conta poderá moderar resenhas, promover usuários e excluir outras contas.</>
@@ -165,11 +171,11 @@ export default function AdminUsers({ viewerId, token, onAccessDenied }) {
                                             )}
                                         </p>
                                         <div className="admin-delete-actions">
-                                            <button className="admin-cancel-button" type="button" autoFocus disabled={pending}
+                                            <button className="button-secondary admin-cancel-button" type="button" autoFocus disabled={pending}
                                                 onClick={() => { setConfirmation(null); setNotice(null); }}>
                                                 Cancelar
                                             </button>
-                                            <button className={promoting ? "admin-cancel-button" : "admin-delete-button"} type="button" disabled={pending}
+                                            <button className={promoting ? "button-primary" : "admin-delete-button"} type="button" disabled={pending}
                                                 aria-describedby={warningId} onClick={() => confirmAction(user.id, action)}>
                                                 {promoting ? "Confirmar promoção" : "Confirmar exclusão"}
                                             </button>

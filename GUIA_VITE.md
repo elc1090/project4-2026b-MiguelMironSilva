@@ -74,6 +74,10 @@ npm run build
 npm run preview -- --port 4173 --strictPort
 ```
 
-O build gera a pasta `frontend/dist`; o preview pode ser acessado em **http://localhost:4173**. Ele serve apenas para conferir o build localmente, não substitui uma hospedagem de produção. A API atual não permite a origem 4173 por padrão: para testar funções conectadas nessa porta, ajuste o CORS do backend ou, depois de parar o servidor de desenvolvimento, execute `npm run preview -- --port 5173 --strictPort`.
+O build gera a pasta `frontend/dist`; abra **http://localhost:4173** para conferir o build localmente. Com a configuração local do backend, a origem de prévia na porta 4173 também pode chamar a API. O preview não substitui uma hospedagem de produção.
 
-A URL `VITE_API_BASE_URL` é incorporada ao build: se mudar a API após compilar, gere um novo build. Para erros de conexão, confira se o backend está ativo, se a URL inclui `/api` e se a origem do navegador está autorizada no CORS.
+A URL `VITE_API_BASE_URL` é incorporada ao build: se mudar a API após compilar, gere um novo build. Em caso de erro:
+
+- Abra <http://127.0.0.1:8000/health> para verificar se a API está acessível antes de testar o login ou a busca. Se a API rodar intencionalmente em outra porta, ajuste `VITE_API_BASE_URL` para essa porta e mantenha `/api`.
+- No Docker, prefira <http://localhost:3000>, especialmente para o login com Google, que retorna ao endereço configurado. O login com senha, o cadastro e a busca também aceitam `127.0.0.1` na porta configurada do frontend.
+- Se a API estiver acessível e apenas a busca falhar, verifique a conexão do backend com o TMDB e o token de leitura em `backend/.env`. O catálogo requer internet; o login com senha e o cadastro não fazem chamadas ao TMDB.

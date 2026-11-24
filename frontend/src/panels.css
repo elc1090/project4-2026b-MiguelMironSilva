@@ -1,0 +1,410 @@
+/* Personal areas: scoped to the inline access panel and the signed-in pages. */
+.panel-page {
+    padding-block: clamp(2rem, 5vw, 4.25rem) clamp(3rem, 8vw, 6rem);
+}
+
+.panel-page .panel-page-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem 2rem;
+    margin-bottom: clamp(1.5rem, 3vw, 2.5rem);
+    padding-bottom: clamp(1.25rem, 3vw, 2rem);
+    border-bottom: 1px solid var(--line);
+}
+
+.panel-page .panel-page-header h1 {
+    margin: 0.35rem 0 0;
+    color: var(--text);
+    font: 400 clamp(2.35rem, 5.8vw, 4.45rem)/1.04 var(--font-display);
+    letter-spacing: -.042em;
+}
+
+.panel-page .panel-intro,
+.auth-panel .auth-panel-heading > p:last-child {
+    margin: .75rem 0 0;
+    color: var(--muted);
+    max-width: 51ch;
+    line-height: 1.6;
+}
+
+.panel-page .panel-back {
+    display: inline-flex;
+    align-items: center;
+    gap: .6rem;
+    flex-shrink: 0;
+}
+
+.panel-page .panel-back > span::before { content: "←"; }
+
+.panel-page .panel-surface,
+.panel-page .panel-empty {
+    margin: 0;
+    min-width: 0;
+    padding: clamp(1rem, 3vw, 1.8rem);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.panel-page .panel-empty {
+    color: var(--muted);
+    line-height: 1.5;
+}
+
+.panel-page .panel-empty > p { margin: 0 0 1rem; }
+.panel-page .panel-empty[role="alert"],
+.panel-page .panel-surface [role="alert"],
+.auth-panel .auth-message[role="alert"] { color: var(--danger); }
+
+.panel-page .panel-surface h2,
+.panel-page .my-review-list h2 {
+    margin: 0;
+    font: 400 clamp(1.3rem, 3vw, 1.85rem)/1.15 var(--font-display);
+    letter-spacing: -.02em;
+    overflow-wrap: anywhere;
+}
+
+/* Inline login and registration. */
+.auth-panel { margin-block: clamp(1.25rem, 4vw, 2.75rem); }
+
+.auth-panel .auth-panel-content {
+    display: grid;
+    grid-template-columns: minmax(0, .95fr) minmax(0, 1.05fr);
+    position: relative;
+    max-width: 56rem;
+    margin-inline: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: var(--shadow);
+}
+
+.auth-panel .auth-panel-heading {
+    display: grid;
+    align-content: center;
+    position: relative;
+    min-width: 0;
+    padding: clamp(2rem, 5vw, 3.7rem);
+    border: solid var(--line);
+    border-width: 0 1px 0 0;
+    border-radius: var(--radius) 0 0 var(--radius);
+    background:
+        radial-gradient(ellipse at 10% 100%, var(--accent-soft), transparent 74%),
+        var(--surface-raised);
+}
+
+.auth-panel .auth-panel-heading::after {
+    position: absolute;
+    inset: auto 1.1rem .75rem;
+    height: .25rem;
+    background: repeating-linear-gradient(90deg, var(--accent) 0 .72rem, transparent .72rem 1.28rem);
+    opacity: .24;
+    content: "";
+    pointer-events: none;
+}
+
+.auth-panel .auth-panel-heading h2 {
+    margin: .4rem 0 0;
+    font: 400 clamp(2rem, 4.6vw, 3.6rem)/1.04 var(--font-display);
+    letter-spacing: -.042em;
+    text-wrap: balance;
+}
+
+.auth-panel .auth-panel-form-area {
+    min-width: 0;
+    padding: clamp(1.25rem, 4vw, 2.4rem);
+}
+
+.auth-panel .auth-panel-close {
+    position: absolute;
+    z-index: 1;
+    inset: .5rem .5rem auto auto;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    width: 44px;
+    min-height: 44px;
+    aspect-ratio: 1;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--surface);
+    color: var(--muted);
+}
+
+.auth-panel .auth-panel-close:hover:not(:disabled) {
+    color: var(--text);
+    background: var(--surface-raised);
+}
+
+.auth-panel .auth-tabs,
+.panel-page .my-movies-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .25rem;
+    padding: .25rem;
+    border: 1px solid var(--line);
+    border-radius: .75rem;
+    background: var(--surface);
+}
+
+.auth-panel .auth-tabs { margin: .65rem 0 1.1rem; }
+.auth-panel .auth-tabs button { flex: 1; white-space: nowrap; }
+.auth-panel .auth-tabs button,
+.panel-page .my-movies-filters button {
+    padding: .5rem .85rem;
+    border: 1px solid transparent;
+    border-radius: .5rem;
+    background: transparent;
+    color: var(--muted);
+    font-size: .87rem;
+    font-weight: 650;
+}
+
+.auth-panel .auth-tabs button:hover:not(:disabled),
+.panel-page .my-movies-filters button:hover { color: var(--text); }
+.auth-panel .auth-tabs button[aria-pressed="true"],
+.panel-page .my-movies-filters button[aria-pressed="true"] {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    background: var(--accent-soft);
+    color: var(--accent);
+}
+
+.auth-panel form,
+.auth-panel .auth-field,
+.panel-page .account-delete-form { display: grid; gap: .85rem; }
+.auth-panel .auth-field,
+.panel-page .account-delete-form { gap: .4rem; }
+.auth-panel label,
+.panel-page .account-delete-form label { font-size: .88rem; font-weight: 650; }
+.auth-panel form :is(input, .button-primary),
+.auth-panel .auth-google { width: 100%; }
+.auth-panel .auth-password-control { position: relative; }
+.auth-panel .auth-password-control input { padding-inline-end: 5.2rem; }
+.auth-panel .auth-password-toggle {
+    position: absolute;
+    inset: .3rem .3rem .3rem auto;
+    min-height: 0;
+    padding: .2rem .55rem;
+    border: 0;
+    border-radius: .45rem;
+    background: transparent;
+    color: var(--accent);
+    font-size: .78rem;
+    font-weight: 700;
+}
+.auth-panel .auth-password-toggle:hover { background: var(--accent-soft); }
+.auth-panel .auth-message {
+    margin: .75rem 0 0;
+    color: var(--muted);
+    font-size: .88rem;
+    line-height: 1.5;
+}
+.auth-panel .auth-field .auth-message { margin: 0; }
+.auth-panel .auth-divider {
+    display: flex;
+    align-items: center;
+    gap: .7rem;
+    margin-block: .8rem;
+    color: var(--muted);
+    font-size: .78rem;
+}
+.auth-panel .auth-divider::before,
+.auth-panel .auth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
+
+/* Poster library and personal reviews. */
+.panel-page .my-movies-filters { width: fit-content; margin-bottom: 1.4rem; }
+.panel-page .my-movies-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr));
+    gap: clamp(.7rem, 2vw, 1.2rem);
+}
+
+.panel-page .my-movie-card {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+    cursor: pointer;
+    transition: border-color .2s ease, background-color .2s ease;
+}
+.panel-page .my-movie-card:hover,
+.panel-page .my-movie-card:focus-visible {
+    border-color: var(--accent);
+    background: var(--surface-raised);
+}
+.panel-page .my-movie-art {
+    position: relative;
+    isolation: isolate;
+    aspect-ratio: 2 / 3;
+    overflow: hidden;
+    border-radius: calc(var(--radius) - 1px) calc(var(--radius) - 1px) 0 0;
+    background: var(--surface-raised);
+}
+.panel-page .my-movie-art img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.panel-page .my-movie-art-placeholder {
+    display: grid;
+    height: 100%;
+    place-content: center;
+    justify-items: center;
+    gap: .55rem;
+    background: radial-gradient(ellipse at 30% 85%, var(--accent-soft), transparent 76%);
+    color: var(--muted);
+    font-size: .78rem;
+}
+.panel-page .my-movie-art-placeholder svg { width: 2rem; color: var(--accent); }
+.panel-page .my-movie-body { padding: .82rem; }
+.panel-page .my-movie-title { display: flex; align-items: start; justify-content: space-between; gap: .4rem; }
+.panel-page .my-movie-title h2 {
+    margin: 0;
+    overflow-wrap: anywhere;
+    font: 400 clamp(1.03rem, 2vw, 1.3rem)/1.2 var(--font-display);
+}
+.panel-page .my-movie-title > span { color: var(--accent); }
+.panel-page .my-movie-year { display: block; margin-top: .3rem; color: var(--muted); font-size: .82rem; }
+.panel-page .my-movie-status {
+    margin: .65rem 0 0;
+    padding-top: .55rem;
+    border-top: 1px solid var(--line);
+    color: var(--accent);
+    font-size: .76rem;
+    line-height: 1.45;
+}
+
+.panel-page .my-review-list,
+.panel-page .admin-users-list { margin: 0; padding: 0; list-style: none; }
+.panel-page .my-review-list { display: grid; gap: .8rem; max-width: 54rem; }
+.panel-page .my-review-list article {
+    padding: clamp(1rem, 3vw, 1.55rem);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+.panel-page .my-review-header { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .65rem 1rem; }
+.panel-page .my-review-dates { margin: .42rem 0 0; color: var(--muted); font-size: .83rem; }
+.panel-page .my-review-rating,
+.panel-page .panel-count,
+.panel-page .admin-user-role {
+    align-self: flex-start;
+    margin: 0;
+    padding: .25rem .6rem;
+    border: 1px solid var(--line);
+    border-radius: 99rem;
+    background: var(--surface-raised);
+    color: var(--muted);
+    font-size: .78rem;
+    font-weight: 650;
+    white-space: nowrap;
+}
+.panel-page .my-review-rating,
+.panel-page .admin-user-role.is-superuser { background: var(--accent-soft); color: var(--accent); }
+.panel-page .my-review-text { margin: 1rem 0 0; max-width: 68ch; white-space: pre-wrap; overflow-wrap: anywhere; }
+.panel-page .my-review-open-movie { margin-top: 1rem; }
+
+/* Account settings and destructive confirmations. */
+.panel-page .panel-account-layout {
+    display: grid;
+    align-items: start;
+    grid-template-columns: minmax(0, .75fr) minmax(0, 1.25fr);
+    gap: 1rem;
+}
+.panel-page .panel-profile { display: flex; align-items: center; gap: .9rem; }
+.panel-page .panel-profile > div { min-width: 0; }
+.panel-page .panel-profile p:not(.eyebrow) { margin: .35rem 0 0; color: var(--muted); overflow-wrap: anywhere; }
+.panel-page .panel-avatar {
+    display: grid;
+    place-content: center;
+    width: 2.65rem;
+    aspect-ratio: 1;
+    flex: none;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    background: var(--accent-soft);
+    color: var(--accent);
+    font: 400 1.4rem var(--font-display);
+}
+.panel-page .panel-danger { border-top: 2px solid var(--danger); }
+.panel-page .panel-danger > .eyebrow { color: var(--danger); }
+.panel-page .panel-danger > p:not(.eyebrow) { margin: .85rem 0 1rem; color: var(--muted); }
+.panel-page .panel-danger > p[role="alert"] { color: var(--danger); }
+.panel-page .account-delete-form { margin-top: 1rem; }
+.panel-page .account-delete-form input { width: 100%; }
+.panel-page .account-delete-actions,
+.panel-page .admin-delete-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
+.panel-page .account-delete-actions { margin-top: .5rem; }
+.panel-page :is(.account-delete-button, .admin-delete-button) {
+    padding: .54rem .85rem;
+    border: 1px solid color-mix(in srgb, var(--danger) 48%, var(--line));
+    border-radius: .55rem;
+    background: transparent;
+    color: var(--danger);
+    font-weight: 650;
+}
+.panel-page :is(.account-delete-button, .admin-delete-button):hover:not(:disabled) {
+    border-color: var(--danger);
+    background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+}
+
+/* Administrative identity and user directory. */
+.panel-page .panel-admin-content { display: grid; gap: 1rem; }
+.panel-page .panel-admin-session { display: grid; gap: .95rem; }
+.panel-page .panel-admin-verified { margin: .4rem 0 0; color: var(--accent); }
+.panel-page .panel-admin-identity {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr));
+    gap: .75rem 1.25rem;
+    margin: 0;
+    padding-top: .95rem;
+    border-top: 1px solid var(--line);
+}
+.panel-page .panel-admin-identity dt { color: var(--muted); font-size: .78rem; font-weight: 650; }
+.panel-page .panel-admin-identity dd { margin: .22rem 0 0; overflow-wrap: anywhere; }
+.panel-page .admin-users-heading,
+.panel-page .admin-user-row,
+.panel-page .admin-user-meta { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem 1rem; }
+.panel-page .admin-users-heading,
+.panel-page .admin-user-row { justify-content: space-between; }
+.panel-page .admin-user-meta { min-width: 0; overflow-wrap: anywhere; }
+.panel-page .admin-users-list { margin-top: .8rem; }
+.panel-page .admin-users-list > li { padding: .9rem 0; border-top: 1px solid var(--line); }
+.panel-page .admin-users-list > li:last-child { padding-bottom: 0; }
+.panel-page .admin-delete-confirmation {
+    margin-top: .65rem;
+    padding: .85rem;
+    border: 1px solid var(--line);
+    border-inline-start: 2px solid var(--danger);
+    border-radius: .65rem;
+    background: var(--surface-raised);
+}
+.panel-page .admin-delete-confirmation.is-promoting { border-inline-start-color: var(--accent); }
+.panel-page .admin-delete-confirmation p { margin: 0 0 .75rem; }
+.panel-page .admin-delete-confirmation p[role="status"] { margin: .6rem 0 0; color: var(--muted); }
+
+@media (width > 42rem) {
+    .auth-panel .auth-panel-form-area:has(.auth-panel-close) { padding-top: 3rem; }
+}
+
+@media (max-width: 42rem) {
+    .auth-panel .auth-panel-content,
+    .panel-page .panel-account-layout { grid-template-columns: minmax(0, 1fr); }
+    .auth-panel .auth-panel-heading {
+        padding: 1.35rem 3.55rem 1.5rem 1.25rem;
+        border-width: 0 0 1px;
+        border-radius: var(--radius) var(--radius) 0 0;
+    }
+    .auth-panel .auth-panel-heading::after { bottom: .4rem; height: .15rem; }
+    .auth-panel .auth-tabs { margin-top: 0; }
+}
+
+@media (max-width: 29rem) {
+    .panel-page .my-movies-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .panel-page .my-movies-filters button { padding-inline: .65rem; }
+    .panel-page .admin-user-meta { align-items: start; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .panel-page .my-movie-card { transition: none; }
+}

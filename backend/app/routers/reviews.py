@@ -3,6 +3,7 @@ import sqlite3
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Response, status
+from fastapi.responses import JSONResponse
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload
@@ -57,7 +58,10 @@ def summarize_reviews(tmdb_id: SQLiteId, db: Database, _current_user: CurrentUse
     try:
         summary = summarize_review_texts(texts)
     except ReviewSummaryError as exc:
-        raise HTTPException(exc.status_code, exc.detail) from None
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": exc.detail, "code": exc.code},
+        )
     return ReviewSummaryResponse(summary=summary, review_count=len(texts))
 
 

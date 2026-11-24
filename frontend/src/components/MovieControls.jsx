@@ -56,23 +56,26 @@ function ControlsForSession({ movieId, token }) {
     const controlsDisabled = !state || isSaving;
     const isLoading = token && movieId != null && !state && !error;
     return (
-        <div className="user-movie-controls">
-            <button type="button" onClick={() => toggle("favorite")} disabled={controlsDisabled}
-                aria-pressed={Boolean(state?.favorite)}>
-                {state?.favorite ? "Favoritado" : "Favoritar"}
-            </button>
-            <button type="button" onClick={() => toggle("watched")} disabled={controlsDisabled}
-                aria-pressed={Boolean(state?.watched)}>
-                {state?.watched ? "Assistido" : "Marcar como assistido"}
-            </button>
-            <button type="button" onClick={() => toggle("watchlist")} disabled={controlsDisabled}
-                aria-pressed={Boolean(state?.watchlist)}>
-                Desejo assistir
-            </button>
+        <div className="movie-detail-controls" role="group" aria-label="Minha biblioteca">
+            <p className="eyebrow" aria-hidden="true">Minha biblioteca</p>
+            <div className="movie-detail-control-actions">
+                <button type="button" className="button-secondary" onClick={() => toggle("favorite")} disabled={controlsDisabled}
+                    aria-pressed={Boolean(state?.favorite)}>
+                    {state?.favorite ? "Favoritado" : "Favoritar"}
+                </button>
+                <button type="button" className="button-secondary" onClick={() => toggle("watched")} disabled={controlsDisabled}
+                    aria-pressed={Boolean(state?.watched)}>
+                    {state?.watched ? "Assistido" : "Marcar como assistido"}
+                </button>
+                <button type="button" className="button-secondary" onClick={() => toggle("watchlist")} disabled={controlsDisabled}
+                    aria-pressed={Boolean(state?.watchlist)}>
+                    Desejo assistir
+                </button>
+            </div>
             {(isLoading || isSaving) && (
-                <span className="movie-controls-status" role="status">{isSaving ? "Salvando..." : "Carregando..."}</span>
+                <p className="movie-detail-control-status" role="status">{isSaving ? "Salvando..." : "Carregando..."}</p>
             )}
-            {error && <span className="movie-controls-error" role="alert">{error}</span>}
+            {error && <p className="movie-detail-control-status" role="alert">{error}</p>}
         </div>
     );
 }

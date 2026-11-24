@@ -53,24 +53,30 @@ function AdminArea({ user, onBack, onLogin, onAccessDenied }) {
     const confirmed = allowed && sessionMatches && result.status === "confirmed";
 
     return (
-        <main className="admin-area" aria-labelledby="admin-heading">
-            <button className="movie-back-btn" type="button" onClick={onBack}>
-                Voltar à pesquisa
-            </button>
-            <h1 id="admin-heading">Área administrativa</h1>
-            <div className="admin-card">
+        <main className="page-shell panel-page admin-area" id="main-content" tabIndex={-1} aria-labelledby="admin-heading">
+            <div className="panel-page-header">
+                <div>
+                    <p className="eyebrow">Gestão / Acesso restrito</p>
+                    <h1 id="admin-heading">Área administrativa</h1>
+                    <p className="panel-intro">Gerencie contas e permissões de acesso.</p>
+                </div>
+                <button className="button-secondary panel-back" type="button" onClick={onBack}>
+                    <span aria-hidden="true" />Pesquisar
+                </button>
+            </div>
+            <div className="panel-admin-content">
                 {allowed && (!sessionMatches || result.status === "loading") && (
-                    <p role="status">Confirmando acesso administrativo no servidor...</p>
+                    <p className="panel-empty" role="status">Confirmando acesso administrativo no servidor...</p>
                 )}
                 {error && (
-                    <div role="alert">
+                    <div className="panel-empty" role="alert">
                         <p>{adminErrorMessage(error)}</p>
                         {error.status === 401 ? (
-                            <button className="movie-back-btn" type="button" onClick={onLogin}>
+                            <button className="button-secondary" type="button" onClick={onLogin}>
                                 Fazer login
                             </button>
                         ) : allowed && error.status !== 403 && (
-                            <button className="movie-back-btn" type="button" onClick={() => setAttempt(value => value + 1)}>
+                            <button className="button-secondary" type="button" onClick={() => setAttempt(value => value + 1)}>
                                 Tentar novamente
                             </button>
                         )}
@@ -78,12 +84,17 @@ function AdminArea({ user, onBack, onLogin, onAccessDenied }) {
                 )}
                 {confirmed && (
                     <>
-                        <p role="status">Papel de Superusuário confirmado pelo servidor.</p>
-                        <dl className="admin-identity">
-                            <dt>ID</dt><dd>{result.identity.id}</dd>
-                            <dt>Usuário</dt><dd>{result.identity.username}</dd>
-                            <dt>Email</dt><dd>{result.identity.email}</dd>
-                        </dl>
+                        <section className="panel-surface panel-admin-session" aria-label="Sessão administrativa">
+                            <div>
+                                <p className="eyebrow">Sessão administrativa</p>
+                                <p className="panel-admin-verified" role="status">Papel de Superusuário confirmado pelo servidor.</p>
+                            </div>
+                            <dl className="panel-admin-identity">
+                                <div><dt>Usuário</dt><dd>{result.identity.username}</dd></div>
+                                <div><dt>Email</dt><dd>{result.identity.email}</dd></div>
+                                <div><dt>ID</dt><dd>{result.identity.id}</dd></div>
+                            </dl>
+                        </section>
                         <AdminUsers viewerId={userId} token={token} onAccessDenied={handleAccessDenied} />
                     </>
                 )}

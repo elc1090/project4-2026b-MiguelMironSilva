@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 680 520" fill="none">
+  <defs>
+    <linearGradient id="sky" x1="355" y1="3" x2="355" y2="465" gradientUnits="userSpaceOnUse"><stop stop-color="#18102c"/><stop offset=".66" stop-color="#483663"/><stop offset="1" stop-color="#7b437b"/></linearGradient>
+    <linearGradient id="sun" x1="397" y1="91" x2="397" y2="332" gradientUnits="userSpaceOnUse"><stop stop-color="#f9dfff"/><stop offset=".52" stop-color="#d599f4"/><stop offset="1" stop-color="#9a53b7"/></linearGradient>
+    <linearGradient id="land" x1="340" y1="295" x2="340" y2="520" gradientUnits="userSpaceOnUse"><stop stop-color="#302044"/><stop offset="1" stop-color="#151020"/></linearGradient>
+    <radialGradient id="halo" cx="0" cy="0" r="1" gradientTransform="translate(409 215) scale(210)" gradientUnits="userSpaceOnUse"><stop stop-color="#c878ef" stop-opacity=".42"/><stop offset="1" stop-color="#c878ef" stop-opacity="0"/></radialGradient>
+    <clipPath id="disk"><circle cx="409" cy="211" r="119"/></clipPath>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".73" numOctaves="3" stitchTiles="stitch"/></filter>
+  </defs>
+  <path fill="url(#sky)" d="M0 0h680v520H0z"/>
+  <circle cx="409" cy="215" r="210" fill="url(#halo)"/>
+  <g stroke="#e3b8fc" opacity=".28"><circle cx="409" cy="211" r="142"/><circle cx="409" cy="211" r="163" stroke-dasharray="3 7"/><path d="M409 32v25m0 309v28M229 211h25m310 0h25"/></g>
+  <g fill="#f5d9ff"><circle cx="534" cy="85" r="2"/><circle cx="589" cy="135" r="1.6"/><circle cx="215" cy="169" r="1.5"/><circle cx="192" cy="106" r="1.1"/><circle cx="327" cy="55" r="1.3"/><circle cx="644" cy="207" r="1.2"/><circle cx="554" cy="53" r="1.2"/><circle cx="255" cy="91" r="1"/><circle cx="112" cy="210" r="1.5"/><path d="M584 57h18m-9-9v18M267 189h10m-5-5v10" stroke="#f5d9ff" opacity=".7"/></g>
+  <circle cx="409" cy="211" r="119" fill="url(#sun)"/>
+  <g clip-path="url(#disk)" stroke="#643676" opacity=".45"><path d="M284 238h252m-252 13h252m-252 16h252m-252 18h252m-252 21h252" stroke-width="3"/><path d="M284 222h252m-252-113h252"/></g>
+  <path d="m0 351 76-31 66-8 61-37 71 36 53-14 59 44 61-30 49 16 61-58 56-8 67-38v297H0Z" fill="#514062"/>
+  <path d="m0 365 86 5 78-56 53 16 76 51 66-47 57 14 47 23 58-13 63-55 46 10 50-27v234H0Z" fill="url(#land)"/>
+  <path d="m0 419 74-30 85 1 31-10 78 40 35 9 82-33 83 11 87-23 37 5 88-26v157H0Z" fill="#241933"/>
+  <path d="m0 476 83-35 114 23 79-5 48-38 69-11 81 48 106-15 100-42v119H0Z" fill="#171021"/>
+  <path d="m359 431 18-22-1-24 13-8 11 7-2 25 14 16-15 8-14-3-8 7Z" fill="#120e1e"/>
+  <circle cx="388" cy="369" r="8" fill="#120e1e"/>
+  <path fill="#fff" opacity=".20" filter="url(#grain)" d="M0 0h680v520H0z" style="mix-blend-mode:soft-light"/>
+</svg>

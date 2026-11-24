@@ -27,15 +27,15 @@ function MoviesForSession({ token, watchlistOnly, onMovieSelected }) {
                 </div>
             )}
             {error ? (
-                <p className="search-error" role="alert">
+                <p className="panel-empty" role="alert">
                     {error.status === 401
                         ? "Sua sessão expirou. Entre novamente para ver seus filmes."
                         : "Não foi possível carregar seus filmes. Tente novamente."}
                 </p>
             ) : !visibleRows ? (
-                <p className="my-movies-empty" role="status">Carregando seus filmes...</p>
+                <p className="panel-empty" role="status">Carregando seus filmes...</p>
             ) : visibleRows.length === 0 ? (
-                <p className="my-movies-empty">
+                <p className="panel-empty">
                     {watchlistOnly
                         ? "Você ainda não marcou filmes que deseja assistir."
                         : FILTERS.find(([value]) => value === filter)[2]}
@@ -57,15 +57,23 @@ export default function MyMovies({ currentUser, onMovieSelected, onBack, watchli
     const titleId = useId();
     const token = currentUser ? getToken() : null;
     return (
-        <section className="my-movies-section" aria-labelledby={titleId}>
-            <div className="my-movies-header">
-                <h1 id={titleId}>{watchlistOnly ? "Desejo assistir" : "My Movies"}</h1>
-                <button type="button" onClick={onBack}>Pesquisar</button>
+        <main className="page-shell panel-page my-movies-section" id="main-content" tabIndex={-1} aria-labelledby={titleId}>
+            <div className="panel-page-header">
+                <div>
+                    <p className="eyebrow">Minha coleção / {watchlistOnly ? "Lista de interesse" : "Biblioteca"}</p>
+                    <h1 id={titleId}>{watchlistOnly ? "Desejo assistir" : "Meus filmes"}</h1>
+                    <p className="panel-intro">{watchlistOnly
+                        ? "Os filmes que você guardou para a próxima sessão."
+                        : "Seus filmes salvos, favoritos e já assistidos em um só lugar."}</p>
+                </div>
+                <button className="button-secondary panel-back" type="button" onClick={onBack}>
+                    <span aria-hidden="true" />Pesquisar
+                </button>
             </div>
             {currentUser ? (
                 <MoviesForSession key={JSON.stringify([currentUser.id, token, watchlistOnly])}
                     token={token} watchlistOnly={watchlistOnly} onMovieSelected={onMovieSelected} />
-            ) : <p className="my-movies-empty">Entre para ver seus filmes.</p>}
-        </section>
+            ) : <p className="panel-empty">Entre para ver seus filmes.</p>}
+        </main>
     );
 }

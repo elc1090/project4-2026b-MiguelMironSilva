@@ -7,32 +7,36 @@ function ReviewsForSession({ token, onMovieSelected }) {
     const { rows, error, movieFor } = usePersonalMovieList(getMyReviews, token);
 
     if (error) return (
-        <p className="search-error" role="alert">
+        <p className="panel-empty" role="alert">
             {error.status === 401
                 ? "Sua sessão expirou. Entre novamente para ver suas avaliações."
                 : "Não foi possível carregar suas avaliações. Tente novamente."}
         </p>
     );
-    if (!rows) return <p role="status">Carregando suas avaliações...</p>;
-    if (rows.length === 0) return <p>Você ainda não publicou nenhuma avaliação.</p>;
+    if (!rows) return <p className="panel-empty" role="status">Carregando suas avaliações...</p>;
+    if (rows.length === 0) return <p className="panel-empty">Você ainda não publicou nenhuma avaliação.</p>;
 
     return (
-        <ul className="movie-review-list">
+        <ul className="my-review-list">
             {rows.map(review => {
                 const movie = movieFor(review.tmdb_id);
                 return (
                     <li key={review.id}>
                         <article>
-                            <h2>{movie.title}</h2>
-                            {review.rating != null && <p>Nota: {review.rating}/10</p>}
-                            <p className="movie-review-dates">
-                                Publicada em <ReviewDate value={review.created_at} />
-                                {review.updated_at && (
-                                    <> · Editada em <ReviewDate value={review.updated_at} /></>
-                                )}
-                            </p>
-                            {review.text != null && <p className="movie-review-text">{review.text}</p>}
-                            <button type="button" className="my-review-open-movie"
+                            <div className="my-review-header">
+                                <div>
+                                    <h2>{movie.title}</h2>
+                                    <p className="my-review-dates">
+                                        Publicada em <ReviewDate value={review.created_at} />
+                                        {review.updated_at && (
+                                            <> · Editada em <ReviewDate value={review.updated_at} /></>
+                                        )}
+                                    </p>
+                                </div>
+                                {review.rating != null && <p className="my-review-rating">Nota: {review.rating}/10</p>}
+                            </div>
+                            {review.text != null && <p className="my-review-text">{review.text}</p>}
+                            <button type="button" className="button-secondary my-review-open-movie"
                                 aria-label={`Ver detalhes do filme: ${movie.title}`}
                                 onClick={() => onMovieSelected(movie)}>
                                 Ver detalhes do filme
@@ -49,15 +53,21 @@ export default function MyReviews({ currentUser, onMovieSelected, onBack }) {
     const titleId = useId();
     const token = currentUser ? getToken() : null;
     return (
-        <section className="my-movies-section my-reviews-section" aria-labelledby={titleId}>
-            <div className="my-movies-header">
-                <h1 id={titleId}>Minhas avaliações</h1>
-                <button type="button" onClick={onBack}>Pesquisar</button>
+        <main className="page-shell panel-page my-reviews-section" id="main-content" tabIndex={-1} aria-labelledby={titleId}>
+            <div className="panel-page-header">
+                <div>
+                    <p className="eyebrow">Minha coleção / Resenhas</p>
+                    <h1 id={titleId}>Minhas avaliações</h1>
+                    <p className="panel-intro">Relembre as notas e resenhas que você publicou.</p>
+                </div>
+                <button className="button-secondary panel-back" type="button" onClick={onBack}>
+                    <span aria-hidden="true" />Pesquisar
+                </button>
             </div>
             {currentUser ? (
                 <ReviewsForSession key={JSON.stringify([currentUser.id, token])}
                     token={token} onMovieSelected={onMovieSelected} />
-            ) : <p>Entre para ver suas avaliações.</p>}
-        </section>
+            ) : <p className="panel-empty">Entre para ver suas avaliações.</p>}
+        </main>
     );
 }

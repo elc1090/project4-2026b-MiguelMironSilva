@@ -9,8 +9,8 @@ Abra o terminal na raiz do projeto e execute:
 ```powershell
 cd backend
 py -3.12 -m venv .venv
-.\.venv\Scripts\Activate
-python -m pip install -r requirements.txt
+python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\Activate.ps1
 ```
 
 Se `.venv` já existir e estiver funcionando, pule sua criação. Se `py` não estiver disponível, use `python -m venv .venv`, verificando antes a versão com `python --version`.
@@ -38,7 +38,7 @@ Ainda dentro de `backend`, com o ambiente ativado:
 
 ```powershell
 python -m alembic upgrade head
-python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8001
+python -m uvicorn app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 **Banco existente:** pare a aplicação e faça backup consistente antes da migração; veja o [guia de migrações](<backend/MIGRACOES.md>). Execute sempre a partir de `backend`: o caminho do SQLite e a leitura das credenciais dependem desse diretório. `--reload` é destinado ao desenvolvimento.

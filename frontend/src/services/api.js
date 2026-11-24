@@ -1,6 +1,21 @@
-export const API_BASE_URL =
-import.meta.env?.VITE_API_BASE_URL ||
-"http://127.0.0.1:8000/api";
+export const API_BASE_URL = (import.meta.env?.VITE_API_BASE_URL?.trim() ||
+    "http://127.0.0.1:8000/api").replace(/\/+$/, "");
+
+export class ApiConnectionError extends Error {
+    constructor(cause) {
+        super("Não foi possível conectar à API. Verifique se o backend está em execução e tente novamente.", { cause });
+        this.name = "ApiConnectionError";
+    }
+}
+
+async function requestApi(url, options) {
+    try {
+        return await fetch(url, options);
+    } catch (error) {
+        if (options?.signal?.aborted || !(error instanceof TypeError)) throw error;
+        throw new ApiConnectionError(error);
+    }
+}
 
 // ============================================================
 // ARMAZENAMENTO DE TOKENS
@@ -61,6 +76,7 @@ if (!response.ok) {
 
     const error = new Error(message);
     error.status = response.status;
+    if (typeof data?.code === "string") error.code = data.code;
     throw error;
 }
 
@@ -78,7 +94,7 @@ username,
 email,
 password
 ) => {
-const response = await fetch(
+const response = await requestApi(
 `${API_BASE_URL}/auth/register`,
 {
 method: "POST",
@@ -123,7 +139,7 @@ formData.append(
     password
 );
 
-const response = await fetch(
+const response = await requestApi(
     `${API_BASE_URL}/auth/login`,
     {
         method: "POST",
@@ -146,12 +162,12 @@ return data;
 };
 
 export const getGoogleSignInStatus = async ({ signal } = {}) => {
-    const response = await fetch(`${API_BASE_URL}/auth/google/status`, { signal });
+    const response = await requestApi(`${API_BASE_URL}/auth/google/status`, { signal });
     return parseResponse(response);
 };
 
 export const exchangeGoogleCode = async (code, verifier) => {
-    const response = await fetch(`${API_BASE_URL}/auth/google/exchange`, {
+    const response = await requestApi(`${API_BASE_URL}/auth/google/exchange`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code, verifier }),
@@ -160,12 +176,12 @@ export const exchangeGoogleCode = async (code, verifier) => {
 };
 
 export const getCurrentUser = async ({ token } = {}) => {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders(token) });
+    const response = await requestApi(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders(token) });
     return parseResponse(response);
 };
 
 export const deleteCurrentUser = async (password, { signal } = {}) => {
-    const response = await fetch(`${API_BASE_URL}/auth/me`, {
+    const response = await requestApi(`${API_BASE_URL}/auth/me`, {
         method: "DELETE",
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify({ password }),
@@ -179,7 +195,7 @@ export const deleteCurrentUser = async (password, { signal } = {}) => {
 };
 
 export const getAdminIdentity = async ({ signal } = {}) => {
-const response = await fetch(`${API_BASE_URL}/admin/me`, {
+const response = await requestApi(`${API_BASE_URL}/admin/me`, {
     headers: getAuthHeaders(),
     signal,
 });
@@ -189,12 +205,12 @@ return parseResponse(response);
 const adminUsersUrl = `${API_BASE_URL}/admin/users`;
 
 export const getAdminUsers = async ({ signal } = {}) => {
-    const response = await fetch(adminUsersUrl, { headers: getAuthHeaders(), signal });
+    const response = await requestApi(adminUsersUrl, { headers: getAuthHeaders(), signal });
     return parseResponse(response);
 };
 
 export const promoteAdminUser = async (userId, { signal } = {}) => {
-    const response = await fetch(`${adminUsersUrl}/${encodeURIComponent(userId)}/promote`, {
+    const response = await requestApi(`${adminUsersUrl}/${encodeURIComponent(userId)}/promote`, {
         method: "POST",
         headers: getAuthHeaders(),
         signal,
@@ -203,7 +219,7 @@ export const promoteAdminUser = async (userId, { signal } = {}) => {
 };
 
 export const deleteAdminUser = async (userId, { signal } = {}) => {
-    const response = await fetch(`${adminUsersUrl}/${encodeURIComponent(userId)}`, {
+    const response = await requestApi(`${adminUsersUrl}/${encodeURIComponent(userId)}`, {
         method: "DELETE",
         headers: getAuthHeaders(),
         signal,
@@ -222,7 +238,7 @@ clearToken();
 // ============================================================
 
 export const searchMovies = async (query) => {
-const response = await fetch(
+const response = await requestApi(
 `${API_BASE_URL}/movies/search?query=${encodeURIComponent(query)}`
 );
 
@@ -233,7 +249,7 @@ return parseResponse(response);
 };
 
 export const getMovie = async (tmdbId, { signal } = {}) => {
-const response = await fetch(
+const response = await requestApi(
 `${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}`,
 { signal }
 );
@@ -245,7 +261,7 @@ return parseResponse(response);
 };
 
 export const getMovieCredits = async (tmdbId) => {
-const response = await fetch(
+const response = await requestApi(
 `${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}/credits`
 );
 
@@ -260,7 +276,7 @@ return parseResponse(response);
 // ============================================================
 
 export const getMyReviews = async ({ signal } = {}) => {
-    const response = await fetch(`${API_BASE_URL}/reviews/mine`, {
+    const response = await requestApi(`${API_BASE_URL}/reviews/mine`, {
         headers: getAuthHeaders(),
         signal,
     });
@@ -271,12 +287,12 @@ const movieReviewsUrl = (tmdbId) =>
     `${API_BASE_URL}/movies/${encodeURIComponent(tmdbId)}/reviews`;
 
 export const getMovieReviews = async (tmdbId, { signal } = {}) => {
-    const response = await fetch(movieReviewsUrl(tmdbId), { signal });
+    const response = await requestApi(movieReviewsUrl(tmdbId), { signal });
     return parseResponse(response);
 };
 
 export const summarizeMovieReviews = async (tmdbId, { signal } = {}) => {
-    const response = await fetch(`${movieReviewsUrl(tmdbId)}/summary`, {
+    const response = await requestApi(`${movieReviewsUrl(tmdbId)}/summary`, {
         method: "POST",
         headers: getAuthHeaders(),
         signal,
@@ -288,7 +304,7 @@ const writeMovieReview = async (url, method, review, signal) => {
     const headers = getAuthHeaders();
     if (review !== undefined) headers["Content-Type"] = "application/json";
 
-    const response = await fetch(url, {
+    const response = await requestApi(url, {
         method,
         headers,
         signal,
@@ -315,12 +331,12 @@ const movieStateUrl = (tmdbId) =>
     `${API_BASE_URL}/my-movies/${encodeURIComponent(tmdbId)}`;
 
 export const getMovieState = async (tmdbId, { signal } = {}) => {
-    const response = await fetch(movieStateUrl(tmdbId), { headers: getAuthHeaders(), signal });
+    const response = await requestApi(movieStateUrl(tmdbId), { headers: getAuthHeaders(), signal });
     return parseResponse(response);
 };
 
 export const updateMovieState = async (tmdbId, changes, { signal } = {}) => {
-    const response = await fetch(movieStateUrl(tmdbId), {
+    const response = await requestApi(movieStateUrl(tmdbId), {
         method: "PATCH",
         headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
         body: JSON.stringify(changes),
@@ -330,7 +346,7 @@ export const updateMovieState = async (tmdbId, changes, { signal } = {}) => {
 };
 
 export const deleteMovieState = async (tmdbId) => {
-const response = await fetch(
+const response = await requestApi(
 `${API_BASE_URL}/my-movies/${encodeURIComponent(tmdbId)}`,
 {
 method: "DELETE",
@@ -348,7 +364,7 @@ return parseResponse(response);
 };
 
 export const getMyMovies = async ({ signal } = {}) => {
-    const response = await fetch(`${API_BASE_URL}/my-movies/`, {
+    const response = await requestApi(`${API_BASE_URL}/my-movies/`, {
         headers: getAuthHeaders(),
         signal,
     });

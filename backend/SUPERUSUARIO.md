@@ -38,7 +38,7 @@ Sem ativação, em Windows, substitua `python` por `.\.venv\Scripts\python.exe`.
 Com o backend rodando no Docker, execute a mesma CLI do guia de superusuário dentro do contêiner.
 
 ```powershell
-docker compose exec backend python -m app.cli create-superuser --username administrador --email admin@exemplo.com
+docker compose exec backend python -m app.cli create-superuser --username administrador --email admin@email.com
 docker compose exec backend python -m app.cli promote-superuser --username EXISTENTE
 ```
 

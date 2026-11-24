@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import {
+    ApiConnectionError,
     createMovieReview,
     deleteMovieReview,
     getMovieReviews,
@@ -79,8 +80,21 @@ function reviewErrorMessage(error, operation) {
     }
 }
 
-function summaryErrorMessage(status) {
-    switch (status) {
+function summaryErrorMessage(error) {
+    if (error instanceof ApiConnectionError) return error.message;
+    switch (error.code) {
+        case "gemini_configuration":
+            return "O resumo por IA ainda não foi configurado no backend.";
+        case "gemini_credentials":
+            return "O Gemini não autorizou a solicitação. Verifique a chave de API no backend.";
+        case "gemini_model":
+            return "O modelo Gemini configurado não está disponível. Verifique a configuração do backend.";
+        case "gemini_quota":
+            return "O Gemini atingiu o limite de uso. Tente novamente mais tarde.";
+        case "gemini_busy":
+            return "O Gemini está sobrecarregado no momento. Tente novamente mais tarde.";
+    }
+    switch (error.status) {
         case 401:
             return "Sua sessão expirou. Entre novamente para gerar o resumo.";
         case 413:
@@ -179,7 +193,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
             }
             setSummary({ result });
         } catch (error) {
-            if (isCurrent()) setSummary({ status: error.status, error: summaryErrorMessage(error.status) });
+            if (isCurrent()) setSummary({ status: error.status, error: summaryErrorMessage(error) });
         } finally {
             if (activeSummary.current === controller) activeSummary.current = null;
         }
@@ -278,8 +292,17 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
 
     return (
         <section className="movie-reviews" aria-labelledby={titleId}>
-            <h2 id={titleId}>Resenhas e avaliações</h2>
-            {list.reviews && <CommunityRating reviews={list.reviews} />}
+            <header className="movie-detail-section-heading movie-detail-reviews-heading">
+                <div>
+                    <p className="eyebrow">Comunidade</p>
+                    <h2 id={titleId}>Resenhas e avaliações</h2>
+                </div>
+                {list.reviews && (
+                    <div className="movie-detail-community-rating">
+                        <CommunityRating reviews={list.reviews} />
+                    </div>
+                )}
+            </header>
             {canSummarize && !reviewSessionExpired && (
                 <section className="movie-review-summary" aria-labelledby={summaryTitleId}>
                     <h3 id={summaryTitleId}>Resumo das resenhas</h3>
@@ -289,7 +312,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                                 Ao solicitar um resumo, os textos públicos das resenhas deste filme serão enviados ao Google.
                             </p>
                             <div className="movie-review-actions">
-                                <button type="button" aria-describedby={summaryDisclosureId}
+                                <button type="button" className="button-secondary" aria-describedby={summaryDisclosureId}
                                     disabled={!!pending || !!summary?.loading} onClick={requestSummary}>
                                     Resumir resenhas com IA
                                 </button>
@@ -314,36 +337,36 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                         <div>
                             <p role="alert">{summary.error}</p>
                             {summarySessionExpired && onLogin && (
-                                <button type="button" onClick={onLogin}>Entrar novamente</button>
+                                <button type="button" className="button-secondary" onClick={onLogin}>Entrar novamente</button>
                             )}
                         </div>
                     )}
                 </section>
             )}
             {userId == null && (
-                <p>
-                    Entre para avaliar ou escrever uma resenha sobre este filme.
-                    {onLogin && <> <button type="button" onClick={onLogin}>Fazer login</button></>}
-                </p>
+                <div className="movie-detail-review-callout">
+                    <p>Entre para avaliar ou escrever uma resenha sobre este filme.</p>
+                    {onLogin && <button type="button" className="button-primary" onClick={onLogin}>Fazer login</button>}
+                </div>
             )}
             {notice && (
-                <p role={notice.error ? "alert" : "status"}>
+                <p className="movie-detail-review-notice" role={notice.error ? "alert" : "status"}>
                     {notice.text}
                     {reviewSessionExpired && onLogin && (
-                        <> <button type="button" onClick={onLogin}>Entrar novamente</button></>
+                        <> <button type="button" className="button-secondary" onClick={onLogin}>Entrar novamente</button></>
                     )}
                 </p>
             )}
-            {pending && <p role="status">{pending}</p>}
+            {pending && <p className="movie-detail-review-notice" role="status">{pending}</p>}
             {list.error ? (
-                <div>
+                <div className="movie-detail-review-callout">
                     <p role="alert">{list.error}</p>
-                    <button type="button" onClick={retryList}>Tentar novamente</button>
+                    <button type="button" className="button-secondary" onClick={retryList}>Tentar novamente</button>
                 </div>
             ) : !list.reviews ? (
-                <p role="status">Carregando resenhas...</p>
+                <p className="movie-detail-review-notice" role="status">Carregando resenhas...</p>
             ) : list.reviews.length === 0 ? (
-                <p>Nenhuma avaliação publicada.</p>
+                <p className="movie-detail-review-notice">Nenhuma avaliação publicada.</p>
             ) : (
                 <ul className="movie-review-list">
                     {list.reviews.map((review) => {
@@ -357,14 +380,14 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                                 <article>
                                     <ReviewContent review={review} />
                                     {confirmingDelete ? (
-                                        <div className="movie-review-actions">
+                                        <div className="movie-review-actions movie-detail-delete-confirmation">
                                             <p id={deleteWarningId}>
                                                 Excluir a avaliação de <strong>{review.author.username}</strong>?
                                                 A nota e o texto, se presentes, serão removidos. Esta ação não pode ser desfeita.
                                             </p>
-                                            <button type="button" disabled={!!pending} aria-describedby={deleteWarningId}
+                                            <button type="button" className="button-secondary movie-detail-danger" disabled={!!pending} aria-describedby={deleteWarningId}
                                                 onClick={() => writeReview("delete", review.id)}>Confirmar exclusão</button>
-                                            <button type="button" autoFocus disabled={!!pending} onClick={() => {
+                                            <button type="button" className="button-secondary" autoFocus disabled={!!pending} onClick={() => {
                                                 setDeleteTargetId(null);
                                                 setNotice(null);
                                             }}>Cancelar</button>
@@ -372,7 +395,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                                     ) : (canEdit || canDelete) && (
                                         <div className="movie-review-actions">
                                             {canEdit && (
-                                                <button type="button" disabled={!!pending} onClick={() => {
+                                                <button type="button" className="button-secondary" disabled={!!pending} onClick={() => {
                                                     setDraft(review.text ?? "");
                                                     setRatingDraft(review.rating == null ? "" : String(review.rating));
                                                     setNotice(null);
@@ -380,7 +403,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                                                 }}>Editar avaliação</button>
                                             )}
                                             {canDelete && (
-                                                <button type="button" disabled={!!pending} onClick={() => {
+                                                <button type="button" className="button-secondary" disabled={!!pending} onClick={() => {
                                                     setNotice(null);
                                                     setDeleteTargetId(review.id);
                                                 }}>{isOwn ? "Excluir avaliação" : "Excluir avaliação (moderação)"}</button>
@@ -398,6 +421,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                     event.preventDefault();
                     writeReview(ownReview ? "edit" : "create");
                 }}>
+                    <h3>{ownReview ? "Editar avaliação" : "Sua avaliação"}</h3>
                     <label htmlFor={ratingId}>Sua avaliação (opcional)</label>
                     <select id={ratingId} value={ratingDraft} disabled={!!pending}
                         onChange={(event) => setRatingDraft(event.target.value)}>
@@ -412,11 +436,11 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
                         onChange={(event) => setDraft(event.target.value)} />
                     <p id={`${textId}-limit`}>{length} / {TEXT_LIMIT} caracteres. Informe uma nota, uma resenha ou ambas; uma avaliação por filme.</p>
                     <div className="movie-review-actions">
-                        <button type="submit" disabled={!!pending}>
+                        <button type="submit" className="button-primary" disabled={!!pending}>
                             {ownReview ? "Salvar edição" : "Publicar avaliação"}
                         </button>
                         {ownReview && (
-                            <button type="button" disabled={!!pending} onClick={() => {
+                            <button type="button" className="button-secondary" disabled={!!pending} onClick={() => {
                                 resetForm();
                                 setNotice(null);
                             }}>Cancelar edição</button>

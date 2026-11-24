@@ -29,7 +29,7 @@ const [currentUser, setCurrentUser] = useState(null);
 const [currentMovie, setCurrentMovie] = useState(null);
 const [currentView, setCurrentView] = useState("search");
 const [showAuthPanel, setShowAuthPanel] = useState(false);
-const [isDarkMode, setIsDarkMode] = useState(false);
+const [isDarkMode, setIsDarkMode] = useState(true);
 const [isInitializing, setIsInitializing] = useState(true);
 const detailsOrigin = useRef("search");
 const sessionRevision = useRef(0);
@@ -266,10 +266,14 @@ const toggleTheme = () => {
 };
 
 
+useEffect(() => {
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
+}, [currentView]);
+
 if (isInitializing) {
     return (
-        <div className="app">
-            <p>Carregando...</p>
+        <div className="app dark-theme app-loading">
+            <p role="status"><span className="eyebrow">MIGUEL CINEMA</span>Preparando a sessão…</p>
         </div>
     );
 }
@@ -283,8 +287,15 @@ return (
                 : "app light-theme"
         }
     >
+        <a className="skip-link" href="#main-content" onClick={(event) => {
+            const content = document.getElementById("main-content");
+            if (!content) return;
+            event.preventDefault();
+            content.focus();
+        }}>Pular para o conteúdo</a>
         <Header
             user={currentUser}
+            onSearch={() => { handleBackToSearch(); setShowAuthPanel(false); }}
             onLogin={() => setShowAuthPanel(true)}
             onMyMovies={() => openPersonalList("library")}
             onMyReviews={() => openPersonalList("my-reviews")}
@@ -312,6 +323,10 @@ return (
             <AuthPanel
                 onLogin={handleLogin}
                 onRegister={handleRegister}
+                onClose={() => {
+                    setShowAuthPanel(false);
+                    document.getElementById("login-btn")?.focus();
+                }}
             />
         )}
 
@@ -376,6 +391,13 @@ return (
                 onBack={handleBackToSearch}
             />
         )}
+
+        <footer className="site-footer">
+            <div className="page-shell footer-inner">
+                <span className="footer-brand">Miguel <strong>Cinema</strong></span>
+                <span>Dados de filmes fornecidos pelo <a href="https://www.themoviedb.org/">TMDB</a>.</span>
+            </div>
+        </footer>
     </div>
 );
 

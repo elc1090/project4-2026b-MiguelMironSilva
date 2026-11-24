@@ -1,3 +1,5 @@
+from urllib.parse import urlsplit
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
@@ -9,16 +11,26 @@ app = FastAPI(
     version="0.1.0",
 )
 
-allowed_origins = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://effervescent-cranachan-cb04c0.netlify.app",
-    settings.frontend_url,
-]
+def allowed_frontend_origins(frontend_url: str) -> list[str]:
+    origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "https://effervescent-cranachan-cb04c0.netlify.app",
+        frontend_url,
+    ]
+    frontend = urlsplit(frontend_url)
+    if frontend.hostname in {"localhost", "127.0.0.1"}:
+        # `localhost` and its IPv4 address are different browser origins. Limit
+        # the alias to the configured port, including custom Compose ports.
+        alias = "127.0.0.1" if frontend.hostname == "localhost" else "localhost"
+        port = f":{frontend.port}" if frontend.port is not None else ""
+        origins.append(f"{frontend.scheme}://{alias}{port}")
+        origins.extend(("http://localhost:4173", "http://127.0.0.1:4173"))
+    return list(dict.fromkeys(origins))
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=allowed_origins,
+    allow_origins=allowed_frontend_origins(settings.frontend_url),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
