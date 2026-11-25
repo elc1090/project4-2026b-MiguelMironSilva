@@ -27,6 +27,8 @@ def get_current_user(
     token: Annotated[str, Depends(oauth2_scheme)],
     db: Annotated[Session, Depends(get_db)],
 ):
+    if not token.isascii():
+        raise invalid_credentials()
     try:
         payload = jwt.decode(
             token,
@@ -34,6 +36,10 @@ def get_current_user(
             algorithms=["HS256"],
         )
 
+        # Old tokens can outlive the migration, but not the first rotation.
+        version = payload.get("sv", 0)
+        if type(version) is not int or version < 0:
+            raise invalid_credentials()
         user_id = payload.get("sub")
 
         if user_id is None:
@@ -50,7 +56,7 @@ def get_current_user(
             select(User).where(User.id == user_id)
         )
 
-        if user is None:
+        if user is None or user.session_version != version:
             raise invalid_credentials()
 
         return user

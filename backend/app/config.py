@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     gemini_api_key: SecretStr = SecretStr("")
     gemini_model: str = ""
+    first_admin_code_sha256: SecretStr = SecretStr("")
+    first_admin_code_expires_at: str = ""
 
     @field_validator("google_redirect_uri", "frontend_url")
     @classmethod

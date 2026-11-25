@@ -1,4 +1,6 @@
 from datetime import datetime, timedelta, timezone
+from secrets import token_urlsafe
+
 import jwt
 from pwdlib import PasswordHash
 from pwdlib.exceptions import UnknownHashError
@@ -85,6 +87,8 @@ def verify_current_password(password: str, stored_hash: str) -> bool:
 def create_access_token(
     user_id: str,
     expires_minutes: int = 30,
+    *,
+    session_version: int = 0,
 ) -> str:
     # Local account provisioning does not need JWT or TMDB credentials.
     from app.config import settings
@@ -96,6 +100,9 @@ def create_access_token(
     payload = {
         "sub": user_id,
         "exp": expire,
+        "sv": session_version,
+        # Distinct tokens from separate logins in the same second stay distinct.
+        "jti": token_urlsafe(24),
     }
 
     return jwt.encode(

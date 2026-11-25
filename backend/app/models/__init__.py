@@ -1,4 +1,11 @@
 from app.models.user import User
+from app.models.first_admin import FirstAdminSetup
 from app.models.user_movie import UserMovie
 from app.models.review import Review
-from app.models.google_login import GoogleIdentity, GoogleLoginAttempt, GoogleLoginGrant
+from app.models.google_login import (
+    GoogleIdentity,
+    GoogleLoginAttempt,
+    GoogleLoginGrant,
+    GooglePasswordAttempt,
+    GooglePasswordProof,
+)

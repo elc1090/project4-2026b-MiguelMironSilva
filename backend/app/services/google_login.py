@@ -1,5 +1,6 @@
 import base64
 import hashlib
+import json
 import re
 import secrets
 import time
@@ -59,7 +60,11 @@ def begin_login(db: Session, browser_secret: str, frontend_challenge: str) -> st
         expires_at=now + ATTEMPT_TTL,
     ))
     db.commit()
-    params = urlencode({
+    return authorization_url(state, nonce, verifier)
+
+
+def authorization_url(state: str, nonce: str, verifier: str, *, require_auth_time: bool = False) -> str:
+    params = {
         "client_id": settings.google_client_id,
         "redirect_uri": settings.google_redirect_uri,
         "response_type": "code",
@@ -69,8 +74,10 @@ def begin_login(db: Session, browser_secret: str, frontend_challenge: str) -> st
         "code_challenge": challenge_for(verifier),
         "code_challenge_method": "S256",
         "prompt": "select_account",
-    })
-    return f"https://accounts.google.com/o/oauth2/v2/auth?{params}"
+    }
+    if require_auth_time:
+        params["claims"] = json.dumps({"id_token": {"auth_time": {"essential": True}}}, separators=(",", ":"))
+    return f"https://accounts.google.com/o/oauth2/v2/auth?{urlencode(params)}"
 
 
 def consume_attempt(db: Session, state: str, browser_secret: str):
@@ -87,6 +94,11 @@ def consume_attempt(db: Session, state: str, browser_secret: str):
 
 
 def verify_google_code(code: str, verifier: str, nonce: str) -> tuple[str, str]:
+    claims = verified_google_claims(code, verifier, nonce)
+    return claims["sub"], claims["email"]
+
+
+def verified_google_claims(code: str, verifier: str, nonce: str) -> dict:
     try:
         with requests.Session() as session:
             response = session.post("https://oauth2.googleapis.com/token", data={
@@ -114,7 +126,7 @@ def verify_google_code(code: str, verifier: str, nonce: str) -> tuple[str, str]:
             or not isinstance(subject, str) or not 1 <= len(subject) <= 255
             or len(email) > 255 or re.fullmatch(r"[^\s@]+@[^\s@]+", email) is None):
         raise InvalidGoogleIdentity()
-    return subject, email
+    return {**claims, "email": email}
 
 
 def issue_grant(db: Session, subject: str, email: str, challenge: str) -> str:
@@ -140,11 +152,14 @@ def issue_grant(db: Session, subject: str, email: str, challenge: str) -> str:
     return code
 
 
-def consume_grant(db: Session, code: str, verifier: str) -> int | None:
+def consume_grant(db: Session, code: str, verifier: str) -> tuple[int, int] | None:
     user_id = db.execute(delete(GoogleLoginGrant).where(
         GoogleLoginGrant.code_hash == digest(code),
         GoogleLoginGrant.challenge == challenge_for(verifier),
         GoogleLoginGrant.expires_at > int(time.time()),
     ).returning(GoogleLoginGrant.user_id)).scalar_one_or_none()
+    # The DELETE holds SQLite's writer lock. Snapshot the version before
+    # releasing it; a concurrent password update must not upgrade this token.
+    version = db.scalar(select(User.session_version).where(User.id == user_id)) if user_id is not None else None
     db.commit()
-    return user_id
+    return (user_id, version) if user_id is not None and version is not None else None

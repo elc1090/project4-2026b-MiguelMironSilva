@@ -180,9 +180,9 @@
 .panel-page .account-delete-form label { font-size: .88rem; font-weight: 650; }
 .auth-panel form :is(input, .button-primary),
 .auth-panel .auth-google { width: 100%; }
-.auth-panel .auth-password-control { position: relative; }
-.auth-panel .auth-password-control input { padding-inline-end: 5.2rem; }
-.auth-panel .auth-password-toggle {
+:is(.auth-panel, .password-area) .auth-password-control { position: relative; }
+:is(.auth-panel, .password-area) .auth-password-control input { padding-inline-end: 5.2rem; }
+:is(.auth-panel, .password-area) .auth-password-toggle {
     position: absolute;
     inset: .3rem .3rem .3rem auto;
     min-height: 0;
@@ -194,7 +194,8 @@
     font-size: .78rem;
     font-weight: 700;
 }
-.auth-panel .auth-password-toggle:hover { background: var(--accent-soft); }
+:is(.auth-panel, .password-area) .auth-password-toggle:hover:not(:disabled) { background: var(--accent-soft); }
+.password-area .auth-password-control input::-ms-reveal { display: none; }
 .auth-panel .auth-message {
     margin: .75rem 0 0;
     color: var(--muted);
@@ -347,6 +348,31 @@
     border-color: var(--danger);
     background: color-mix(in srgb, var(--danger) 12%, var(--surface));
 }
+
+/* Installer-only account action, separate from the destructive controls. */
+.panel-page :is(.panel-first-admin, .panel-first-admin-feedback) { grid-column: 1 / -1; }
+.panel-page .panel-first-admin { display: grid; gap: .65rem; max-width: 42rem; }
+.panel-page .panel-first-admin > p:not(.eyebrow),
+.panel-page .first-admin-form > p[role="status"],
+.panel-page .panel-first-admin-feedback { color: var(--muted); }
+.panel-page .first-admin-form, .panel-page .first-admin-form > div { display: grid; gap: .55rem; }
+.panel-page .first-admin-form { max-width: 26rem; }
+.panel-page .first-admin-form label { font-weight: 650; }
+.panel-page .first-admin-form input { width: 100%; }
+.panel-page .first-admin-form input::-ms-reveal { display: none; }
+.panel-page :is(.first-admin-form, .panel-first-admin-feedback) > button { justify-self: start; }
+.panel-page .panel-first-admin-feedback { display: grid; gap: .5rem; }
+
+/* Password and Google confirmation. */
+.panel-page .password-card { display: grid; gap: .85rem; max-width: 42rem; }
+.panel-page .password-card > p:not([role="alert"]) { color: var(--muted); }
+.panel-page .password-card > p[role="status"]:empty { margin: 0; height: 0; }
+.panel-page .password-card > button, .panel-page .password-form > button { justify-self: start; }
+.panel-page .password-form { display: grid; gap: 1rem; max-width: 32rem; }
+.panel-page .password-form > div { display: grid; gap: .35rem; }
+.panel-page .password-form label { font-weight: 650; }
+.panel-page .password-form input { width: 100%; }
+.panel-page .password-field-hint { color: var(--muted); font-size: .84rem; }
 
 /* Administrative identity and user directory. */
 .panel-page .panel-admin-content { display: grid; gap: 1rem; }

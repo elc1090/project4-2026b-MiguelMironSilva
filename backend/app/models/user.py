@@ -31,6 +31,9 @@ class User(Base):
         nullable=False,
     )
 
+    # Incrementing this counter invalidates all previously issued session tokens.
+    session_version: Mapped[int] = mapped_column(nullable=False, default=0, server_default="0")
+
     @property
     def has_password(self) -> bool:
         # An empty value explicitly marks Google-only accounts; it is not a hash.

@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.models.user import User
 from app.schemas.auth import UserCreate
+from app.services.admin_setup_state import close_first_admin_setup
 from app.services.auth import password_hash
 
 
@@ -37,7 +38,9 @@ def create_superuser(db: Session, username: str, email: str, password: str) -> U
             password_hash=password_hash.hash(data.password),
             is_superuser=True,
         )
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
         db.add(user)
+        close_first_admin_setup(db)
         db.commit()
         return user
     except IntegrityError:
@@ -54,13 +57,15 @@ def create_superuser(db: Session, username: str, email: str, password: str) -> U
 def promote_superuser(db: Session, username: str) -> User:
     try:
         username, _ = validate_identity(username)
+        db.connection().exec_driver_sql("BEGIN IMMEDIATE")
         user = db.scalar(select(User).where(User.username == username))
         if user is None:
             raise SuperuserError("Usuário não encontrado")
         # Only change this flag: never replace password, email or account data.
         if not user.is_superuser:
             user.is_superuser = True
-            db.commit()
+        close_first_admin_setup(db)
+        db.commit()
         return user
     except SQLAlchemyError:
         db.rollback()

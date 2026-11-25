@@ -10,7 +10,7 @@ function FilmMark() {
 }
 
 function Header({
-    user, onSearch, onLogin, onMyMovies, onMyReviews, onWatchlist, view,
+    user, onSearch, onLogin, onMyMovies, onMyReviews, onWatchlist, onPassword, view,
     onAdmin, onAccount, isAccountOpen, onLogout, onToggleTheme, isDarkMode,
 }) {
     const current = (name) => view === name ? "page" : undefined;
@@ -20,7 +20,7 @@ function Header({
         <header className="site-header">
             <div className="header-inner page-shell">
                 <button type="button" className="site-brand" onClick={onSearch} aria-label="Miguel Cinema — início">
-                    <span className="brand-icon"><img src={`${import.meta.env.BASE_URL}images/cinema-mark.svg`} alt="" width={28} height={28} /></span>
+                    <span className="brand-icon"><img src={`${import.meta.env?.BASE_URL ?? "/"}images/cinema-mark.svg`} alt="" width={28} height={28} /></span>
                     <span>Miguel <strong>Cinema</strong><small>DATABASE DE FILMES</small></span>
                 </button>
 
@@ -30,6 +30,7 @@ function Header({
                         <button type="button" onClick={onMyMovies} aria-current={current("library")}>Meus Filmes</button>
                         <button type="button" onClick={onWatchlist} aria-current={current("watchlist")}>Desejo assistir</button>
                         <button type="button" onClick={onMyReviews} aria-current={current("my-reviews")}>Minhas Resenhas</button>
+                        <button type="button" onClick={onPassword} aria-current={current("password")}>Senha</button>
                         {isAdmin && <button type="button" onClick={onAdmin} aria-current={current("admin")}>Administração</button>}
                     </>}
                 </nav>

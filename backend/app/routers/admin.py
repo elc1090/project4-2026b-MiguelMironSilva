@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models.user import User
 from app.schemas.auth import AdminUserResponse, UserResponse
 from app.services.account_deletion import account_write_transaction, delete_account
+from app.services.admin_setup_state import close_first_admin_setup
 
 
 router = APIRouter(prefix="/api/admin", tags=["admin"])
@@ -47,6 +48,7 @@ def promote_user(user_id: SQLiteId, current_user: CurrentSuperuser, db: Database
         if target is None:
             raise HTTPException(status.HTTP_404_NOT_FOUND, "Usuário não encontrado")
         target.is_superuser = True
+        close_first_admin_setup(db)
         promoted = AdminUserResponse(id=str(target.id), username=target.username, is_superuser=True)
     response.headers["Cache-Control"] = "no-store"
     return promoted

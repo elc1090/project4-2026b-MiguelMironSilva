@@ -6,7 +6,59 @@ const deleteErrors = {
     503: "A exclusão de contas está temporariamente indisponível. Tente novamente mais tarde.",
 };
 
-export default function AccountArea({ user, pending, error, onClearError, onDelete, onBack }) {
+function FirstAdminCard({ phase, error, busy, onClaim }) {
+    const titleId = useId();
+    const instructionsId = useId();
+    const inputId = useId();
+    const errorId = useId();
+    const codeRef = useRef(null);
+    const submittingRef = useRef(false);
+    const [code, setCode] = useState("");
+    const submitting = phase === "submitting";
+    const disabled = submitting || busy;
+
+    useEffect(() => {
+        if (error) codeRef.current?.focus();
+    }, [error]);
+
+    async function submit(event) {
+        event.preventDefault();
+        if (disabled || submittingRef.current || code.trim() === "") return;
+        submittingRef.current = true;
+        setCode("");
+        try {
+            await onClaim(code);
+        } finally {
+            submittingRef.current = false;
+        }
+    }
+
+    return (
+        <section className="panel-surface panel-first-admin" aria-labelledby={titleId}>
+            <p className="eyebrow">Administração</p>
+            <h2 id={titleId}>Configurar primeiro superusuário</h2>
+            <p id={instructionsId}>Se você é responsável pela instalação, digite o código de configuração. Ele só pode ser usado uma vez e habilita a administração para esta conta.</p>
+            <form className="first-admin-form" onSubmit={submit} aria-describedby={instructionsId}>
+                <div>
+                    <label htmlFor={inputId}>Código de configuração</label>
+                    <input id={inputId} ref={codeRef} name="first-admin-code" type="password"
+                        autoComplete="off" autoCapitalize="none" spellCheck={false} required
+                        value={code} onChange={(event) => setCode(event.target.value)} disabled={disabled}
+                        aria-invalid={error ? true : undefined} aria-describedby={error ? errorId : undefined} />
+                </div>
+                {error && <p id={errorId} role="alert">{error}</p>}
+                <button type="submit" className="button-primary" disabled={disabled || code.trim() === ""}>
+                    Ativar acesso à administração
+                </button>
+                {submitting && <p role="status">Confirmando a configuração inicial…</p>}
+            </form>
+        </section>
+    );
+}
+
+export default function AccountArea({ user, pending, error, onClearError, onDelete, onBack, onPassword,
+    firstAdmin, onClaimFirstAdmin, onFirstAdminRelogin, onFirstAdminOpen,
+}) {
     const headingId = useId();
     const dangerId = useId();
     const warningId = useId();
@@ -19,6 +71,8 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
     const restoreDeleteFocus = useRef(false);
     const [isConfirming, setIsConfirming] = useState(false);
     const [password, setPassword] = useState("");
+    const claimingFirstAdmin = firstAdmin?.phase === "submitting";
+    const deletionBusy = pending || claimingFirstAdmin;
 
     useEffect(() => { headingRef.current?.focus(); }, []);
     useEffect(() => {
@@ -37,7 +91,7 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
 
     function submitDelete(event) {
         event.preventDefault();
-        if (user.has_password === false || !isConfirming || pending || password === "") return;
+        if (user.has_password === false || !isConfirming || deletionBusy || password === "") return;
         onDelete(password);
         setPassword("");
     }
@@ -67,7 +121,12 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
                     <p className="eyebrow">Zona de risco</p>
                     <h2 id={dangerId}>Excluir minha conta</h2>
                     {user.has_password === false ? (
-                        <p>Sua conta usa o login com Google e não tem senha. Para solicitar a exclusão, entre em contato com a administração.</p>
+                        <>
+                            <p>Sua conta usa o login com Google e não tem senha. {onPassword
+                                ? "Defina uma senha para confirmar a exclusão da conta aqui. Se não conseguir acessar o Google, entre em contato com a administração."
+                                : "Para solicitar a exclusão, entre em contato com a administração."}</p>
+                            {onPassword && <button type="button" className="button-secondary" onClick={onPassword}>Definir senha</button>}
+                        </>
                     ) : (
                         <>
                             <p id={warningId}>
@@ -87,7 +146,7 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
                                 ref={deleteButtonRef}
                                 aria-describedby={warningId}
                                 hidden={isConfirming}
-                                disabled={pending}
+                                disabled={deletionBusy}
                                 onClick={() => { onClearError(); setIsConfirming(true); }}
                             >
                                 Excluir minha conta
@@ -106,10 +165,10 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
                                         aria-invalid={error === 403 ? true : undefined}
                                         aria-describedby={error === 403 ? errorId : undefined}
                                         required
-                                        disabled={pending}
+                                        disabled={deletionBusy}
                                     />
                                     <div className="account-delete-actions">
-                                        <button className="button-secondary account-cancel-button" type="button" disabled={pending} onClick={() => {
+                                        <button className="button-secondary account-cancel-button" type="button" disabled={deletionBusy} onClick={() => {
                                             restoreDeleteFocus.current = true;
                                             setIsConfirming(false);
                                             setPassword("");
@@ -117,7 +176,7 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
                                         }}>
                                             Cancelar
                                         </button>
-                                        <button className="account-delete-button" type="submit" disabled={pending || password === ""}>
+                                        <button className="account-delete-button" type="submit" disabled={deletionBusy || password === ""}>
                                             Confirmar exclusão definitiva
                                         </button>
                                     </div>
@@ -126,6 +185,24 @@ export default function AccountArea({ user, pending, error, onClearError, onDele
                         </>
                     )}
                 </section>
+                {onClaimFirstAdmin && (firstAdmin?.phase === "available" || claimingFirstAdmin) && (
+                    <FirstAdminCard phase={firstAdmin.phase} error={firstAdmin.error} busy={pending} onClaim={onClaimFirstAdmin} />
+                )}
+                {firstAdmin?.phase === "success" && user.is_superuser === true && (
+                    <div className="panel-first-admin-feedback">
+                        <p role="status">Seu acesso de superusuário foi ativado.</p>
+                        {onFirstAdminOpen && <button type="button" className="button-secondary" onClick={onFirstAdminOpen}>Abrir Administração</button>}
+                    </div>
+                )}
+                {firstAdmin?.phase === "closed" && (
+                    <p className="panel-first-admin-feedback" role="status">O código expirou ou a configuração inicial já está encerrada.</p>
+                )}
+                {firstAdmin?.phase === "expired" && (
+                    <div className="panel-first-admin-feedback">
+                        <p role="alert">Sua sessão expirou. Entre novamente para configurar a administração.</p>
+                        {onFirstAdminRelogin && <button type="button" className="button-secondary" onClick={onFirstAdminRelogin}>Entrar novamente</button>}
+                    </div>
+                )}
             </div>
         </main>
     );

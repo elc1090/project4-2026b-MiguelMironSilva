@@ -3,7 +3,7 @@ from urllib.parse import urlsplit
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
-from app.routers import movies, auth, user_movies, admin, reviews, google_login
+from app.routers import movies, auth, user_movies, admin, reviews, google_login, first_admin
 
 
 app = FastAPI(
@@ -39,6 +39,7 @@ app.add_middleware(
 app.include_router(movies.router)
 app.include_router(auth.router)
 app.include_router(google_login.router)
+app.include_router(first_admin.router)
 app.include_router(admin.router)
 app.include_router(user_movies.router)
 app.include_router(reviews.router)

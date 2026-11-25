@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator
+from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, model_validator
 
 
 class UserCreate(BaseModel):
@@ -33,6 +33,30 @@ class GoogleExchangeRequest(BaseModel):
 
     code: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
     verifier: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
+
+
+class GooglePasswordStartRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    challenge: str = Field(pattern=r"^[A-Za-z0-9_-]{43}$")
+
+
+class PasswordUpdateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    new_password: SecretStr = Field(min_length=8, max_length=128)
+    current_password: SecretStr | None = Field(default=None, min_length=1, max_length=128)
+    code: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{43}$")
+    verifier: str | None = Field(default=None, pattern=r"^[A-Za-z0-9_-]{43}$")
+
+    @model_validator(mode="after")
+    def require_exactly_one_proof(self):
+        if self.current_password is not None:
+            if self.code is None and self.verifier is None:
+                return self
+        elif self.code is not None and self.verifier is not None:
+            return self
+        raise ValueError("Informe apenas um método de confirmação")
 
 
 class DeleteAccountRequest(BaseModel):

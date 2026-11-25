@@ -1,16 +1,20 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import {
+claimFirstAdmin,
 clearToken,
 deleteCurrentUser,
 getCurrentUser,
+getFirstAdminAvailability,
 getToken,
 login,
 logout,
 register,
 setToken,
+updatePassword,
 } from "./services/api.js";
 import { googleSignInError } from "./services/googleAuth.js";
+import { clearPendingGooglePassword, googlePasswordError, startGooglePassword } from "./services/googlePassword.js";
 
 import Header from "./components/Header.jsx";
 import AuthPanel from "./components/AuthPanel.jsx";
@@ -20,11 +24,13 @@ import MyMovies from "./components/MyMovies.jsx";
 import MyReviews from "./components/MyReviews.jsx";
 import AdminArea from "./components/AdminArea.jsx";
 import AccountArea from "./components/AccountArea.jsx";
+import PasswordArea from "./components/PasswordArea.jsx";
 import { canAccessAdmin } from "./services/adminPolicy.js";
 
 const NO_ACCOUNT_DELETION = { pending: false, error: null };
+const NO_PASSWORD_ACTION = { pending: null, notice: null };
 
-function App({ googleCallback = null } = {}) {
+function App({ googleCallback = null, googlePasswordCallback = null } = {}) {
 const [currentUser, setCurrentUser] = useState(null);
 const [currentMovie, setCurrentMovie] = useState(null);
 const [currentView, setCurrentView] = useState("search");
@@ -35,7 +41,12 @@ const detailsOrigin = useRef("search");
 const sessionRevision = useRef(0);
 const authenticatedSession = useRef(null);
 const activeAccountDeletion = useRef(null);
+const activePasswordOperation = useRef(null);
+const activeFirstAdminClaim = useRef(null);
+const [firstAdmin, setFirstAdmin] = useState(null);
 const [accountDeletion, setAccountDeletion] = useState(NO_ACCOUNT_DELETION);
+const [passwordAction, setPasswordAction] = useState(NO_PASSWORD_ACTION);
+const [passwordProof, setPasswordProof] = useState(null);
 const [accountNotice, setAccountNotice] = useState(null);
 const [googleNotice, setGoogleNotice] = useState(null);
 const accountNoticeRef = useRef(null);
@@ -44,14 +55,27 @@ const resetAccountSession = useCallback(() => {
     authenticatedSession.current = null;
     activeAccountDeletion.current?.abort();
     activeAccountDeletion.current = null;
+    activePasswordOperation.current?.abort();
+    activePasswordOperation.current = null;
+    activeFirstAdminClaim.current?.abort();
+    activeFirstAdminClaim.current = null;
+    clearPendingGooglePassword();
+    setFirstAdmin(null);
     setAccountDeletion(NO_ACCOUNT_DELETION);
+    setPasswordAction(NO_PASSWORD_ACTION);
+    setPasswordProof(null);
 }, []);
 
-useEffect(() => () => activeAccountDeletion.current?.abort(), []);
+useEffect(() => () => {
+    activeAccountDeletion.current?.abort();
+    activePasswordOperation.current?.abort();
+    activeFirstAdminClaim.current?.abort();
+}, []);
 
 const handleAdminAccessDenied = useCallback(async (status) => {
     const revision = ++sessionRevision.current;
     // Never leave stale admin UI visible while /auth/me is being refreshed.
+    setFirstAdmin(null);
     setCurrentUser(user => user ? { ...user, is_superuser: false } : null);
     if (status === 401) {
         resetAccountSession();
@@ -91,6 +115,7 @@ useEffect(() => {
                 try {
                     const next = await googleCallback.complete();
                     if (!isCurrent()) return;
+                    clearPendingGooglePassword();
                     setToken(next.token);
                     authenticatedSession.current = { token: next.token };
                     setCurrentUser(next.user);
@@ -106,8 +131,18 @@ useEffect(() => {
                 try {
                     user = await getCurrentUser({ token });
                     if (!isCurrent()) return;
+                    const resumePassword = googlePasswordCallback && user?.has_password === false &&
+                        await googlePasswordCallback.ownsSession(token, user.id);
+                    if (!isCurrent()) return;
                     authenticatedSession.current = { token };
                     setCurrentUser(user);
+                    if (resumePassword) {
+                        setCurrentView("password");
+                        if (googlePasswordCallback.proof) setPasswordProof(googlePasswordCallback.proof);
+                        else setPasswordAction({ pending: null, notice: {
+                            kind: "error", text: googlePasswordError(googlePasswordCallback.error),
+                        } });
+                    }
                 } catch (error) {
                     if (!isCurrent()) return;
                     // A failed Google attempt is not evidence that the old session is invalid.
@@ -125,7 +160,7 @@ useEffect(() => {
 
     initializeSession();
     return () => { active = false; };
-}, [googleCallback]);
+}, [googleCallback, googlePasswordCallback]);
 
 
 const handleLogin = async (username, password) => {
@@ -192,9 +227,202 @@ const endSession = (notice = null) => {
     setShowAuthPanel(notice?.kind === "login");
 };
 
+const firstAdminSession = authenticatedSession.current;
+const firstAdminUserId = currentUser?.id;
+const canCheckFirstAdmin = currentView === "account" && firstAdminUserId != null && !canAccessAdmin(currentUser);
+useEffect(() => {
+    if (!canCheckFirstAdmin || !firstAdminSession || firstAdminSession.token !== getToken() ||
+        activeFirstAdminClaim.current) return;
+
+    const controller = new AbortController();
+    const revision = sessionRevision.current;
+    const isCurrent = () => !controller.signal.aborted && sessionRevision.current === revision &&
+        authenticatedSession.current === firstAdminSession && getToken() === firstAdminSession.token;
+    setFirstAdmin(null);
+    (async () => {
+        try {
+            const result = await getFirstAdminAvailability({ token: firstAdminSession.token, signal: controller.signal });
+            if (isCurrent() && result?.available === true) {
+                setFirstAdmin({ session: firstAdminSession, phase: "available" });
+            }
+        } catch (error) {
+            if (isCurrent() && error?.status === 401) {
+                setFirstAdmin({ session: firstAdminSession, phase: "expired" });
+            }
+            // A failed availability check never blocks the profile or account deletion.
+        }
+    })();
+    return () => controller.abort();
+}, [canCheckFirstAdmin, firstAdminSession, firstAdminUserId]);
+
+const handleFirstAdminRelogin = () => {
+    if (firstAdminSession && authenticatedSession.current === firstAdminSession &&
+        firstAdminSession.token === getToken()) {
+        endSession({ kind: "login", text: "Sua sessão expirou. Entre novamente para configurar a administração." });
+    }
+};
+
+const handleClaimFirstAdmin = async (code) => {
+    const session = firstAdminSession;
+    if (!session || !canCheckFirstAdmin || firstAdmin?.session !== session || firstAdmin.phase !== "available" ||
+        authenticatedSession.current !== session || session.token !== getToken() ||
+        activeFirstAdminClaim.current || activeAccountDeletion.current || activePasswordOperation.current ||
+        typeof code !== "string" || code.trim() === "") return;
+
+    const controller = new AbortController();
+    const revision = sessionRevision.current;
+    activeFirstAdminClaim.current = controller;
+    const isCurrent = () => !controller.signal.aborted && activeFirstAdminClaim.current === controller &&
+        sessionRevision.current === revision && authenticatedSession.current === session && getToken() === session.token;
+    const isSameAdmin = (user) => user?.id != null && String(user.id) === String(firstAdminUserId) &&
+        user.is_superuser === true;
+    setFirstAdmin({ session, phase: "submitting" });
+    let accepted = false;
+    try {
+        const result = await claimFirstAdmin(code, { token: session.token, signal: controller.signal });
+        if (!isCurrent()) return;
+        accepted = true;
+        const token = result?.access_token;
+        if (typeof token !== "string" || !token || token === session.token || result.token_type !== "bearer" ||
+            !isSameAdmin(result.user)) throw new Error("Invalid first-administrator result");
+        const verified = await getCurrentUser({ token, signal: controller.signal });
+        if (!isCurrent()) return;
+        if (!isSameAdmin(verified)) throw new Error("Invalid first-administrator session");
+
+        // Commit only after the server verifies the replacement for this same account.
+        // Authorization on privileged endpoints still takes place on the server.
+        setToken(token);
+        ++sessionRevision.current;
+        const replacement = { token };
+        authenticatedSession.current = replacement;
+        setCurrentUser((user) => user?.id === firstAdminUserId ? { ...user, is_superuser: true } : user);
+        setFirstAdmin({ session: replacement, phase: "success" });
+    } catch (error) {
+        if (!isCurrent()) return;
+        if (accepted) {
+            endSession({ kind: "login", text: "Não foi possível confirmar a nova sessão. Entre novamente para verificar o acesso à administração." });
+        } else if (error?.status === 401) {
+            handleFirstAdminRelogin();
+        } else if (error?.status === 409) {
+            setFirstAdmin({ session, phase: "closed" });
+        } else {
+            const message = {
+                403: "Código incorreto. Digite o código novamente.",
+                422: "O código informado não é válido. Confira e tente novamente.",
+            }[error?.status] ?? "Não foi possível concluir a configuração. Tente novamente.";
+            setFirstAdmin({ session, phase: "available", error: message });
+        }
+    } finally {
+        if (activeFirstAdminClaim.current === controller) activeFirstAdminClaim.current = null;
+    }
+};
+
+const beginPasswordOperation = (kind) => {
+    const session = authenticatedSession.current;
+    if (!currentUser || !session || session.token !== getToken() ||
+        activePasswordOperation.current || activeAccountDeletion.current || activeFirstAdminClaim.current) return null;
+
+    const controller = new AbortController();
+    activePasswordOperation.current = controller;
+    setPasswordAction({ pending: kind, notice: null });
+    return {
+        token: session.token,
+        userId: currentUser.id,
+        signal: controller.signal,
+        isCurrent: () => !controller.signal.aborted && authenticatedSession.current === session && getToken() === session.token,
+        finish: () => {
+            if (activePasswordOperation.current === controller) activePasswordOperation.current = null;
+        },
+    };
+};
+
+const passwordFeedback = (kind, text) => setPasswordAction({ pending: null, notice: { kind, text } });
+
+const handleStartGooglePassword = async () => {
+    if (currentUser?.has_password !== false) return;
+    const operation = beginPasswordOperation("google");
+    if (!operation) return;
+    setPasswordProof(null);
+    try {
+        await startGooglePassword(operation);
+        if (operation.isCurrent()) setPasswordAction(NO_PASSWORD_ACTION);
+    } catch (error) {
+        if (!operation.isCurrent()) return;
+        if (error.status === 401) {
+            endSession({ kind: "login", text: "Sua sessão expirou. Entre novamente para definir uma senha." });
+            return;
+        }
+        const text = {
+            403: "Não foi possível confirmar uma conta Google vinculada a este perfil.",
+            409: "O estado da senha desta conta mudou. Entre novamente para continuar.",
+            503: "A confirmação com Google está indisponível no momento.",
+        }[error.status] ?? "Não foi possível iniciar a confirmação com Google. Tente novamente.";
+        passwordFeedback("error", text);
+    } finally {
+        operation.finish();
+    }
+};
+
+const handleUpdatePassword = async (currentPassword, newPassword) => {
+    const settingFirst = currentUser?.has_password === false;
+    const proof = settingFirst ? passwordProof : { current_password: currentPassword };
+    if (!proof) return;
+    const operation = beginPasswordOperation("save");
+    if (!operation) return;
+    let rotated = false;
+    try {
+        const result = await updatePassword(proof, newPassword, operation);
+        if (!operation.isCurrent()) return;
+        rotated = true;
+        const token = result?.access_token;
+        if (typeof token !== "string" || !token || token === operation.token ||
+            result.token_type?.toLowerCase() !== "bearer") throw new Error("Invalid replacement token");
+
+        // Check the candidate explicitly. Do not overwrite the old bearer or UI
+        // identity until /me accepts it for the same account with a password.
+        const user = await getCurrentUser({ token, signal: operation.signal });
+        if (!operation.isCurrent()) return;
+        // /me omits has_password for local accounts; explicit false means Google-only.
+        if (user?.id == null || String(user.id) !== String(operation.userId) || user.has_password === false) {
+            throw new Error("Unexpected replacement session");
+        }
+        setToken(token);
+        ++sessionRevision.current;
+        authenticatedSession.current = { token };
+        setCurrentUser(user);
+        setPasswordProof(null);
+        clearPendingGooglePassword();
+        passwordFeedback("success", settingFirst
+            ? "Senha definida. Agora você também pode entrar com seu e-mail e senha."
+            : "Senha atualizada com sucesso.");
+    } catch (error) {
+        if (!operation.isCurrent()) return;
+        if (rotated) {
+            endSession({ kind: "login", text: "Não foi possível validar a nova sessão. Entre novamente; se a senha foi salva, use a nova senha." });
+            return;
+        }
+        if (error.status === 401) {
+            endSession({ kind: "login", text: "Sua sessão expirou. Entre novamente para gerenciar sua senha." });
+            return;
+        }
+        if (settingFirst && [403, 409, 410].includes(error.status)) setPasswordProof(null);
+        const text = {
+            403: settingFirst ? "A confirmação com Google expirou ou não é válida. Confirme sua conta novamente." : "A senha atual está incorreta.",
+            409: "O estado da senha desta conta mudou. Entre novamente para continuar.",
+            410: "A confirmação com Google expirou. Confirme sua conta novamente.",
+            422: "Confira os campos da senha e tente novamente.",
+            429: "Foram feitas muitas tentativas. Aguarde um pouco antes de tentar novamente.",
+        }[error.status] ?? "Não foi possível atualizar sua senha. Tente novamente. Se já tiver sido alterada, entre com a nova senha.";
+        passwordFeedback("error", text);
+    } finally {
+        operation.finish();
+    }
+};
+
 const handleDeleteAccount = async (password) => {
     const session = authenticatedSession.current;
-    if (currentUser?.has_password === false || !session || session.token !== getToken() || activeAccountDeletion.current) return;
+    if (currentUser?.has_password === false || !session || session.token !== getToken() ||
+        activeAccountDeletion.current || activePasswordOperation.current || activeFirstAdminClaim.current) return;
 
     // The mutation belongs to the session, not the view: leaving Minha conta
     // must not prevent a completed deletion from signing that session out.
@@ -253,6 +481,11 @@ const handleOpenAccount = () => {
     setCurrentView("account");
 };
 
+const handleOpenPassword = () => {
+    if (!authenticatedSession.current || authenticatedSession.current.token !== getToken()) return;
+    openPersonalList("password");
+};
+
 const handleBackToSearch = () => {
     setCurrentView("search");
     setCurrentMovie(null);
@@ -299,6 +532,7 @@ return (
             onLogin={() => setShowAuthPanel(true)}
             onMyMovies={() => openPersonalList("library")}
             onMyReviews={() => openPersonalList("my-reviews")}
+            onPassword={handleOpenPassword}
             onWatchlist={() => openPersonalList("watchlist")}
             view={currentView}
             onAdmin={handleOpenAdmin}
@@ -341,7 +575,25 @@ return (
                     if (accountDeletion.error !== null) setAccountDeletion(NO_ACCOUNT_DELETION);
                 }}
                 onDelete={handleDeleteAccount}
+                onPassword={handleOpenPassword}
                 onBack={handleBackToSearch}
+                firstAdmin={firstAdmin?.session === firstAdminSession ? firstAdmin : null}
+                onClaimFirstAdmin={handleClaimFirstAdmin}
+                onFirstAdminRelogin={handleFirstAdminRelogin}
+                onFirstAdminOpen={handleOpenAdmin}
+            />
+        )}
+
+        {currentView === "password" && currentUser && (
+            <PasswordArea
+                key={currentUser.id}
+                user={currentUser}
+                googleConfirmed={Boolean(passwordProof)}
+                pending={passwordAction.pending}
+                notice={passwordAction.notice}
+                onStartGoogle={handleStartGooglePassword}
+                onUpdatePassword={handleUpdatePassword}
+                onAccount={handleOpenAccount}
             />
         )}
 

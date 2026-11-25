@@ -175,8 +175,58 @@ export const exchangeGoogleCode = async (code, verifier) => {
     return parseResponse(response);
 };
 
-export const getCurrentUser = async ({ token } = {}) => {
-    const response = await requestApi(`${API_BASE_URL}/auth/me`, { headers: getAuthHeaders(token) });
+export const getCurrentUser = async ({ token, signal } = {}) => {
+    const response = await requestApi(`${API_BASE_URL}/auth/me`, {
+        headers: getAuthHeaders(token), ...(signal ? { signal } : {}),
+    });
+    return parseResponse(response);
+};
+
+const firstAdminUrl = `${API_BASE_URL}/auth/first-admin`;
+
+async function readFirstAdminResponse(response) {
+    if (response.status === 200) return response.json();
+    // Bootstrap errors can contain request-validation details. Do not read or expose them.
+    const error = new Error("Configuração inicial indisponível.");
+    error.status = response.status;
+    throw error;
+}
+
+export const getFirstAdminAvailability = async ({ token, signal }) => {
+    const response = await requestApi(firstAdminUrl, {
+        headers: getAuthHeaders(token), signal, cache: "no-store", redirect: "error",
+    });
+    return readFirstAdminResponse(response);
+};
+
+export const claimFirstAdmin = async (code, { token, signal }) => {
+    const response = await requestApi(firstAdminUrl, {
+        method: "POST",
+        headers: { ...getAuthHeaders(token), "Content-Type": "application/json" },
+        signal, cache: "no-store", redirect: "error",
+        body: JSON.stringify({ code }),
+    });
+    return readFirstAdminResponse(response);
+};
+
+// Credentials are not persisted here: only App may commit a verified replacement token.
+export const updatePassword = async (proof, newPassword, { token, signal }) => {
+    const response = await requestApi(`${API_BASE_URL}/auth/password`, {
+        method: "PATCH",
+        headers: { ...getAuthHeaders(token), "Content-Type": "application/json" },
+        signal,
+        body: JSON.stringify({ ...proof, new_password: newPassword }),
+    });
+    return parseResponse(response);
+};
+
+export const requestGooglePasswordAuthorization = async (challenge, { token, signal }) => {
+    const response = await requestApi(`${API_BASE_URL}/auth/google/password/start`, {
+        method: "POST",
+        headers: { ...getAuthHeaders(token), "Content-Type": "application/json" },
+        signal,
+        body: JSON.stringify({ challenge }),
+    });
     return parseResponse(response);
 };
 
