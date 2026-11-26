@@ -357,7 +357,7 @@
 .panel-page .first-admin-form > p[role="status"],
 .panel-page .panel-first-admin-feedback { color: var(--muted); }
 .panel-page .first-admin-form, .panel-page .first-admin-form > div { display: grid; gap: .4rem; }
-.panel-page .first-admin-form { max-width: 1rem; }
+.panel-page .first-admin-form { margin-top: 1rem; }
 .panel-page .first-admin-form label { font-size: .88rem; font-weight: 650; }
 .panel-page .first-admin-form input { width: 100%; }
 .panel-page .first-admin-form input::-ms-reveal { display: none; }
