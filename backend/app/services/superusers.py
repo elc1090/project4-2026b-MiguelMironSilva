@@ -1,4 +1,4 @@
-"""Privileged local operations only; no HTTP endpoint exposes these services."""
+"""Operações privilegiadas somente locais; nenhum endpoint HTTP as disponibiliza."""
 from pydantic import ValidationError
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -11,7 +11,7 @@ from app.services.auth import password_hash
 
 
 class SuperuserError(ValueError):
-    """Safe, operator-facing message without SQL parameters or credentials."""
+    """Mensagem segura para o operador, sem parâmetros SQL ou credenciais."""
 
 
 def validate_identity(username: str, email: str = "unused") -> tuple[str, str]:
@@ -61,7 +61,7 @@ def promote_superuser(db: Session, username: str) -> User:
         user = db.scalar(select(User).where(User.username == username))
         if user is None:
             raise SuperuserError("Usuário não encontrado")
-        # Only change this flag: never replace password, email or account data.
+        # Altere somente este indicador: nunca substitua senha, e-mail ou dados da conta.
         if not user.is_superuser:
             user.is_superuser = True
         close_first_admin_setup(db)

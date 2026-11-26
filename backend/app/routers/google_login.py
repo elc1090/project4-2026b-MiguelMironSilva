@@ -25,7 +25,7 @@ def enabled() -> bool:
 
 
 def return_to_frontend(**values: str) -> RedirectResponse:
-    # Fixed origin from server configuration; no provider or caller input is reflected.
+    # Origem fixa da configuração do servidor; nenhuma entrada do provedor ou chamador é refletida.
     return RedirectResponse(f"{settings.frontend_url}/#{urlencode(values)}",
                             status_code=303, headers=PRIVATE_HEADERS)
 

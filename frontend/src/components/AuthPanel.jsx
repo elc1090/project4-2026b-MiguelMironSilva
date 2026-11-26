@@ -58,7 +58,7 @@ export default function AuthPanel({ onLogin, onRegister, onClose }) {
             .then((status) => {
                 if (!controller.signal.aborted) setGoogleEnabled(status?.enabled === true);
             })
-            .catch(() => { /* Google sign-in is optional; local auth stays available. */ });
+            .catch(() => { /* O login Google é opcional; a autenticação local continua disponível. */ });
         const onPageShow = (event) => {
             if (event.persisted) setIsStartingGoogle(false);
         };

@@ -6,7 +6,7 @@ from app.models.user import User
 
 
 def rotate_user_sessions(db: Session, user: User) -> int:
-    """Revoke old sessions and pending Google grants inside the caller's transaction."""
+    """Revoga sessões antigas e autorizações Google pendentes na transação chamadora."""
     user.session_version += 1
     for model in (GoogleLoginGrant, GooglePasswordAttempt, GooglePasswordProof):
         db.execute(delete(model).where(model.user_id == user.id))

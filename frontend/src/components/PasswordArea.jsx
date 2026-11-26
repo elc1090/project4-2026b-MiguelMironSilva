@@ -62,7 +62,7 @@ export default function PasswordArea({
             return;
         }
         submitLock.current = true;
-        // Neither password survives the submit in form state or in browser storage.
+        // Nenhuma das senhas permanece no estado do formulário ou no armazenamento do navegador após o envio.
         clearFields();
         try {
             await onUpdatePassword(first ? undefined : currentPassword, newPassword);

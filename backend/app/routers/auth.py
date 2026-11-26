@@ -35,7 +35,7 @@ class _AuthRoute(APIRoute):
             try:
                 return await handler(request)
             except RequestValidationError:
-                # FastAPI's default error includes raw input, even for SecretStr.
+                # O erro padrão do FastAPI inclui a entrada original, mesmo para SecretStr.
                 raise HTTPException(
                     status.HTTP_422_UNPROCESSABLE_CONTENT, "Corpo da solicitação inválido",
                     headers={"Cache-Control": "no-store"},
@@ -143,15 +143,15 @@ def delete_me(
     db: Annotated[Session, Depends(get_db)],
 ):
     actor_id, stored_hash, version = current_user.id, current_user.password_hash, current_user.session_version
-    db.rollback()  # Release the authentication read transaction before verifying.
+    db.rollback()  # Libere a transação de leitura da autenticação antes de verificar.
     password = body.password.get_secret_value()
     verified = verify_current_password(password, stored_hash)
 
     with account_write_transaction(db, actor_id) as actor:
         if actor.session_version != version:
             raise invalid_credentials()
-        # Keep the normal Argon2 check outside the writer lock, but never trust
-        # that result if the hash has changed since authentication.
+        # Mantenha a verificação Argon2 normal fora do bloqueio de escrita, mas não confie
+        # nesse resultado se o hash mudou desde a autenticação.
         if actor.password_hash != stored_hash:
             verified = verify_current_password(password, actor.password_hash)
         if not verified:

@@ -43,7 +43,7 @@ class ReviewResponse(BaseModel):
     @field_validator("created_at", "updated_at")
     @classmethod
     def normalize_utc(cls, value: datetime | None) -> datetime | None:
-        # SQLite drops offsets; these timestamps are written in UTC.
+        # O SQLite descarta deslocamentos; estes horários são gravados em UTC.
         if value is None:
             return None
         if value.tzinfo is None:

@@ -2,7 +2,7 @@ from pydantic import BaseModel, ConfigDict, Field, SecretStr, field_validator, m
 
 
 class UserCreate(BaseModel):
-    # Public registration deliberately ignores privilege/identity extras.
+    # O cadastro público ignora intencionalmente campos extras de identidade e privilégio.
     model_config = ConfigDict(extra="ignore")
 
     username: str = Field(min_length=3, max_length=30)

@@ -1,4 +1,4 @@
-"""Persist Google identities and transient login credentials.
+"""Armazena identidades Google e credenciais temporárias de login.
 
 Revision ID: 20261123_07
 Revises: 20261119_06

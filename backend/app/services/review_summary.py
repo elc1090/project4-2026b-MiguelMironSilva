@@ -8,7 +8,7 @@ import requests
 from app.config import settings
 
 
-# Keep calls small without assuming a particular model's context size or tokenizer.
+# Mantenha as chamadas pequenas sem presumir o tamanho de contexto ou o tokenizador de um modelo específico.
 _BATCH_BYTES = 24 * 1024
 _REQUEST_BUDGET_SECONDS = 45
 _BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models"
@@ -32,7 +32,7 @@ class ReviewSummaryError(Exception):
 
 def _batches(texts: Sequence[str]) -> Iterator[list[str]]:
     batch: list[str] = []
-    size = 2  # JSON brackets
+    size = 2  # Colchetes do JSON
     for text in texts:
         item_size = len(json.dumps(text, ensure_ascii=False).encode("utf-8"))
         if item_size + 2 > _BATCH_BYTES:
@@ -47,7 +47,7 @@ def _batches(texts: Sequence[str]) -> Iterator[list[str]]:
 
 
 def _overload_retry_delay(response: requests.Response, deadline: float) -> int | None:
-    # Respect a longer provider wait by leaving the retry to the user.
+    # Se o provedor indicar uma espera maior, deixe a nova tentativa a cargo do usuário.
     retry_after = response.headers.get("Retry-After", "1").strip()
     if not re.fullmatch(r"[0-9]{1,5}", retry_after):
         return None

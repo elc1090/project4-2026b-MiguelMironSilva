@@ -9,7 +9,7 @@ WORKDIR /app
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# A new named volume copies this writable subdirectory from the image.
+# Um novo volume nomeado copia este subdiretório gravável da imagem.
 RUN groupadd --gid 10001 app \
     && useradd --uid 10001 --gid 10001 --no-create-home app \
     && install -d -o app -g app -m 0750 /data/sqlite

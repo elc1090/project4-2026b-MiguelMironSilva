@@ -7,7 +7,7 @@ from app.database import Base
 
 
 class FirstAdminSetup(Base):
-    """A durable closure marker, independent of any particular administrator."""
+    """Marcador durável de encerramento, independente de qualquer administrador específico."""
 
     __tablename__ = "first_admin_setup"
     __table_args__ = (CheckConstraint("id = 1", name="ck_first_admin_setup_singleton"),)

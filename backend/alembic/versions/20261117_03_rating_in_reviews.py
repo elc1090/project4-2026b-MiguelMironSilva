@@ -1,4 +1,4 @@
-"""Move personal film ratings into public reviews.
+"""Transfere notas pessoais de filmes para avaliações públicas.
 
 Revision ID: 20261117_03
 Revises: 20261117_02
@@ -23,8 +23,8 @@ def upgrade():
             "ck_reviews_content_present", "text IS NOT NULL OR rating IS NOT NULL"
         )
 
-    # Preserve legacy ratings; merge into an existing public review where present,
-    # otherwise create a rating-only review for this author and film.
+    # Preserve as notas antigas; mescle-as a uma avaliação pública existente ou,
+    # se não houver, crie uma avaliação somente com nota para esse autor e filme.
     op.execute(sa.text("""
         UPDATE reviews
         SET rating = (
@@ -61,8 +61,8 @@ def downgrade():
     with op.batch_alter_table("user_movies") as batch:
         batch.add_column(sa.Column("rating", sa.Integer(), nullable=True))
 
-    # Restore ratings to the old personal-state structure. If needed, create a
-    # minimal state row so rating-only reviews survive this downgrade.
+    # Restaure as notas à estrutura antiga de estado pessoal. Se necessário, crie
+    # um registro mínimo para preservar avaliações que contenham somente nota.
     op.execute(sa.text("""
         UPDATE user_movies
         SET rating = (
@@ -88,8 +88,8 @@ def downgrade():
                 AND user_movies.tmdb_id = CAST(reviews.tmdb_id AS TEXT)
           )
     """))
-    # A 20261117_02 review requires non-null text; restore ratings first and
-    # drop rating-only review rows before returning to that schema.
+    # Uma avaliação da revisão 20261117_02 exige texto não nulo; restaure as notas e
+    # remova avaliações sem texto antes de voltar àquele esquema.
     op.execute(sa.text("DELETE FROM reviews WHERE text IS NULL"))
     with op.batch_alter_table("reviews") as batch:
         batch.drop_constraint("ck_reviews_content_present", type_="check")

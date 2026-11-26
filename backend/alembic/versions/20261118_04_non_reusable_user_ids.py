@@ -1,4 +1,4 @@
-"""Prevent reuse of SQLite user IDs (also used as JWT subjects).
+"""Impede a reutilização de IDs de usuário do SQLite (também usados como assuntos JWT).
 
 Revision ID: 20261118_04
 Revises: 20261117_03
@@ -14,15 +14,15 @@ depends_on = None
 
 def upgrade():
     connection = op.get_bind()
-    # The Alembic SQLite connection (unlike the app) has FK enforcement off.
-    # Rebuilding the parent table with FK enforcement on could cascade deletions.
+    # A conexão SQLite do Alembic, ao contrário da aplicação, não verifica chaves estrangeiras.
+    # Reconstruir a tabela pai com essa verificação ativa poderia propagar exclusões.
     if connection.dialect.name != "sqlite" or connection.exec_driver_sql("PRAGMA foreign_keys").scalar():
         raise RuntimeError("A migração de IDs de usuários exige SQLite sem foreign_keys na conexão de migração")
-    # SQLite's legacy transaction mode does not start a transaction for DDL.
+    # O modo legado de transações do SQLite não inicia uma transação para DDL.
     if not connection.connection.driver_connection.in_transaction:
         connection.exec_driver_sql("BEGIN IMMEDIATE")
 
-    # Explicit schema: reflection may miss legacy inline UNIQUE constraints.
+    # Especifique o esquema: a reflexão pode ignorar restrições UNIQUE antigas embutidas.
     original_objects = connection.exec_driver_sql("""
         SELECT sql FROM sqlite_master
         WHERE tbl_name = 'users' AND type IN ('index', 'trigger') AND sql IS NOT NULL
@@ -42,7 +42,7 @@ def upgrade():
         INSERT INTO users_autoincrement_tmp (id, username, email, password_hash, created_at, is_superuser)
         SELECT id, username, email, password_hash, created_at, is_superuser FROM users
     """)
-    # If a legacy table already used AUTOINCREMENT, preserve even IDs above MAX(id).
+    # Se a tabela antiga já usava AUTOINCREMENT, preserve inclusive IDs acima de MAX(id).
     prior_sequence = connection.exec_driver_sql("SELECT seq FROM sqlite_sequence WHERE name = 'users'").scalar()
     op.drop_table("users")
     op.rename_table("users_autoincrement_tmp", "users")

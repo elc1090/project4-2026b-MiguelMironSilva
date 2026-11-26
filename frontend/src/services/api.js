@@ -36,7 +36,7 @@ sessionStorage.removeItem(TOKEN_KEY);
 };
 
 // ============================================================
-// HELPERS DE REQUEST
+// AUXILIARES DE SOLICITAÇÃO
 // ============================================================
 
 const getAuthHeaders = (token = getToken()) => {
@@ -186,7 +186,7 @@ const firstAdminUrl = `${API_BASE_URL}/auth/first-admin`;
 
 async function readFirstAdminResponse(response) {
     if (response.status === 200) return response.json();
-    // Bootstrap errors can contain request-validation details. Do not read or expose them.
+    // Erros da configuração inicial podem conter detalhes da validação. Não os leia nem os exponha.
     const error = new Error("Configuração inicial indisponível.");
     error.status = response.status;
     throw error;

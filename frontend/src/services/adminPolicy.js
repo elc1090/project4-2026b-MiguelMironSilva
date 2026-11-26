@@ -1,4 +1,4 @@
-// UI visibility only. The API remains the authority for every admin request.
+// Controla somente a visibilidade da interface. A API continua autorizando cada solicitação administrativa.
 export const canAccessAdmin = (user) => user?.is_superuser === true;
 
 export const adminErrorMessage = (error) => {

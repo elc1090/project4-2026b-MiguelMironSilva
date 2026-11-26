@@ -74,7 +74,7 @@ useEffect(() => () => {
 
 const handleAdminAccessDenied = useCallback(async (status) => {
     const revision = ++sessionRevision.current;
-    // Never leave stale admin UI visible while /auth/me is being refreshed.
+    // Nunca mantenha a interface administrativa obsoleta visível enquanto /auth/me é atualizado.
     setFirstAdmin(null);
     setCurrentUser(user => user ? { ...user, is_superuser: false } : null);
     if (status === 401) {
@@ -87,7 +87,7 @@ const handleAdminAccessDenied = useCallback(async (status) => {
     try {
         const user = await getCurrentUser();
         if (revision === sessionRevision.current && getToken() === token) {
-            // An admin endpoint's denial takes precedence over /auth/me for this session.
+            // A negação de um endpoint administrativo prevalece sobre /auth/me nesta sessão.
             setCurrentUser({ ...user, is_superuser: false });
         }
     } catch (error) {
@@ -97,7 +97,7 @@ const handleAdminAccessDenied = useCallback(async (status) => {
             clearToken();
             setCurrentUser(null);
         }
-        // On network/server errors retain the conservatively hidden admin role.
+        // Em erros de rede ou servidor, mantenha o papel administrativo oculto por precaução.
     }
 }, [resetAccountSession]);
 
@@ -145,7 +145,7 @@ useEffect(() => {
                     }
                 } catch (error) {
                     if (!isCurrent()) return;
-                    // A failed Google attempt is not evidence that the old session is invalid.
+                    // Uma tentativa Google malsucedida não comprova que a sessão anterior seja inválida.
                     if (!googleError || error.status === 401) clearToken();
                 }
             }
@@ -190,7 +190,7 @@ useEffect(() => {
 
 const handleReviewLogin = () => {
     if (currentUser) {
-        // A signed-in user only sees the review login action after a 401.
+        // Um usuário conectado só vê a ação de login de avaliações após uma resposta 401.
         ++sessionRevision.current;
         resetAccountSession();
         clearToken();
@@ -249,7 +249,7 @@ useEffect(() => {
             if (isCurrent() && error?.status === 401) {
                 setFirstAdmin({ session: firstAdminSession, phase: "expired" });
             }
-            // A failed availability check never blocks the profile or account deletion.
+            // Uma falha ao verificar a disponibilidade nunca bloqueia o perfil nem a exclusão da conta.
         }
     })();
     return () => controller.abort();
@@ -284,13 +284,13 @@ const handleClaimFirstAdmin = async (code) => {
         accepted = true;
         const token = result?.access_token;
         if (typeof token !== "string" || !token || token === session.token || result.token_type !== "bearer" ||
-            !isSameAdmin(result.user)) throw new Error("Invalid first-administrator result");
+            !isSameAdmin(result.user)) throw new Error("Resposta inválida ao configurar o primeiro administrador");
         const verified = await getCurrentUser({ token, signal: controller.signal });
         if (!isCurrent()) return;
-        if (!isSameAdmin(verified)) throw new Error("Invalid first-administrator session");
+        if (!isSameAdmin(verified)) throw new Error("Sessão inválida do primeiro administrador");
 
-        // Commit only after the server verifies the replacement for this same account.
-        // Authorization on privileged endpoints still takes place on the server.
+        // Efetive a alteração somente após o servidor validar a nova sessão para esta mesma conta.
+        // Os endpoints privilegiados continuam autorizando as operações no servidor.
         setToken(token);
         ++sessionRevision.current;
         const replacement = { token };
@@ -376,15 +376,15 @@ const handleUpdatePassword = async (currentPassword, newPassword) => {
         rotated = true;
         const token = result?.access_token;
         if (typeof token !== "string" || !token || token === operation.token ||
-            result.token_type?.toLowerCase() !== "bearer") throw new Error("Invalid replacement token");
+            result.token_type?.toLowerCase() !== "bearer") throw new Error("Token de substituição inválido");
 
-        // Check the candidate explicitly. Do not overwrite the old bearer or UI
-        // identity until /me accepts it for the same account with a password.
+        // Valide explicitamente a sessão candidata. Não substitua o token anterior nem a identidade
+        // da interface até /me aceitá-la para a mesma conta com senha definida.
         const user = await getCurrentUser({ token, signal: operation.signal });
         if (!operation.isCurrent()) return;
-        // /me omits has_password for local accounts; explicit false means Google-only.
+        // /me omite has_password para contas locais; o valor false indica uma conta somente Google.
         if (user?.id == null || String(user.id) !== String(operation.userId) || user.has_password === false) {
-            throw new Error("Unexpected replacement session");
+            throw new Error("Sessão de substituição inesperada");
         }
         setToken(token);
         ++sessionRevision.current;
@@ -424,8 +424,8 @@ const handleDeleteAccount = async (password) => {
     if (currentUser?.has_password === false || !session || session.token !== getToken() ||
         activeAccountDeletion.current || activePasswordOperation.current || activeFirstAdminClaim.current) return;
 
-    // The mutation belongs to the session, not the view: leaving Minha conta
-    // must not prevent a completed deletion from signing that session out.
+    // A alteração pertence à sessão, não à tela: sair de Minha conta
+    // não deve impedir que uma exclusão concluída encerre essa sessão.
     const controller = new AbortController();
     activeAccountDeletion.current = controller;
     const isCurrent = () => !controller.signal.aborted

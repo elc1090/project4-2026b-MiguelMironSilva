@@ -52,7 +52,7 @@ def update_movie_state(
     for field, value in updates.items():
         setattr(movie_state, field, value)
 
-    # Store a row only while at least one independent flag is set.
+    # Mantenha o registro somente enquanto ao menos uma sinalização independente estiver ativa.
     if not (movie_state.favorite or movie_state.watched or movie_state.watchlist):
         if not is_new:
             db.delete(movie_state)

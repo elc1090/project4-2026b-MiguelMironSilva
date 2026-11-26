@@ -1,4 +1,4 @@
-/* Personal areas: scoped to the inline access panel and the signed-in pages. */
+/* Áreas pessoais: estilos restritos ao painel de acesso e às páginas autenticadas. */
 .panel-page {
     padding-block: clamp(2rem, 5vw, 4.25rem) clamp(3rem, 8vw, 6rem);
 }
@@ -66,7 +66,7 @@
     overflow-wrap: anywhere;
 }
 
-/* Inline login and registration. */
+/* Login e cadastro no painel. */
 .auth-panel { margin-block: clamp(1.25rem, 4vw, 2.75rem); }
 
 .auth-panel .auth-panel-content {
@@ -214,7 +214,7 @@
 .auth-panel .auth-divider::before,
 .auth-panel .auth-divider::after { content: ""; flex: 1; border-top: 1px solid var(--line); }
 
-/* Poster library and personal reviews. */
+/* Biblioteca de filmes e avaliações pessoais. */
 .panel-page .my-movies-filters { width: fit-content; margin-bottom: 1.4rem; }
 .panel-page .my-movies-list {
     display: grid;
@@ -305,7 +305,7 @@
 .panel-page .my-review-text { margin: 1rem 0 0; max-width: 68ch; white-space: pre-wrap; overflow-wrap: anywhere; }
 .panel-page .my-review-open-movie { margin-top: 1rem; }
 
-/* Account settings and destructive confirmations. */
+/* Configurações da conta e confirmações de ações irreversíveis. */
 .panel-page .panel-account-layout {
     display: grid;
     align-items: start;
@@ -349,21 +349,22 @@
     background: color-mix(in srgb, var(--danger) 12%, var(--surface));
 }
 
-/* Installer-only account action, separate from the destructive controls. */
-.panel-page :is(.panel-first-admin, .panel-first-admin-feedback) { grid-column: 1 / -1; }
-.panel-page .panel-first-admin { display: grid; gap: .65rem; max-width: 42rem; }
+/* Ação da conta disponível somente na configuração inicial, separada dos controles destrutivos. */
+.panel-page :is(.panel-first-admin, .panel-first-admin-feedback) { grid-column: -2 / -1; }
+.panel-page .panel-first-admin { display: grid; gap: .65rem; border-top: 2px solid var(--accent); }
+.panel-page .panel-first-admin > .eyebrow {color: var(--accent); }
 .panel-page .panel-first-admin > p:not(.eyebrow),
 .panel-page .first-admin-form > p[role="status"],
 .panel-page .panel-first-admin-feedback { color: var(--muted); }
-.panel-page .first-admin-form, .panel-page .first-admin-form > div { display: grid; gap: .55rem; }
-.panel-page .first-admin-form { max-width: 26rem; }
-.panel-page .first-admin-form label { font-weight: 650; }
+.panel-page .first-admin-form, .panel-page .first-admin-form > div { display: grid; gap: .4rem; }
+.panel-page .first-admin-form { max-width: 1rem; }
+.panel-page .first-admin-form label { font-size: .88rem; font-weight: 650; }
 .panel-page .first-admin-form input { width: 100%; }
 .panel-page .first-admin-form input::-ms-reveal { display: none; }
 .panel-page :is(.first-admin-form, .panel-first-admin-feedback) > button { justify-self: start; }
 .panel-page .panel-first-admin-feedback { display: grid; gap: .5rem; }
 
-/* Password and Google confirmation. */
+/* Confirmação de senha e Google. */
 .panel-page .password-card { display: grid; gap: .85rem; max-width: 42rem; }
 .panel-page .password-card > p:not([role="alert"]) { color: var(--muted); }
 .panel-page .password-card > p[role="status"]:empty { margin: 0; height: 0; }
@@ -374,7 +375,7 @@
 .panel-page .password-form input { width: 100%; }
 .panel-page .password-field-hint { color: var(--muted); font-size: .84rem; }
 
-/* Administrative identity and user directory. */
+/* Identidade administrativa e diretório de usuários. */
 .panel-page .panel-admin-content { display: grid; gap: 1rem; }
 .panel-page .panel-admin-session { display: grid; gap: .95rem; }
 .panel-page .panel-admin-verified { margin: .4rem 0 0; color: var(--accent); }

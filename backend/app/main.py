@@ -20,8 +20,8 @@ def allowed_frontend_origins(frontend_url: str) -> list[str]:
     ]
     frontend = urlsplit(frontend_url)
     if frontend.hostname in {"localhost", "127.0.0.1"}:
-        # `localhost` and its IPv4 address are different browser origins. Limit
-        # the alias to the configured port, including custom Compose ports.
+        # `localhost` e seu endereço IPv4 são origens diferentes no navegador. Limite
+        # o alias à porta configurada, incluindo portas personalizadas do Compose.
         alias = "127.0.0.1" if frontend.hostname == "localhost" else "localhost"
         port = f":{frontend.port}" if frontend.port is not None else ""
         origins.append(f"{frontend.scheme}://{alias}{port}")

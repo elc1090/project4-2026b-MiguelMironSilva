@@ -132,8 +132,8 @@ def verified_google_claims(code: str, verifier: str, nonce: str) -> dict:
 def issue_grant(db: Session, subject: str, email: str, challenge: str) -> str:
     code = new_secret()
     with db.begin():
-        # Serialize account provisioning with existing SQLite writers. Never claim
-        # an existing (possibly privileged) account by its email address.
+        # Serializa a criação de contas com as gravações em andamento no SQLite. Nunca reivindique
+        # uma conta existente (possivelmente privilegiada) pelo endereço de e-mail.
         db.connection().exec_driver_sql("BEGIN IMMEDIATE")
         identity = db.get(GoogleIdentity, subject)
         if identity is None:
@@ -158,8 +158,8 @@ def consume_grant(db: Session, code: str, verifier: str) -> tuple[int, int] | No
         GoogleLoginGrant.challenge == challenge_for(verifier),
         GoogleLoginGrant.expires_at > int(time.time()),
     ).returning(GoogleLoginGrant.user_id)).scalar_one_or_none()
-    # The DELETE holds SQLite's writer lock. Snapshot the version before
-    # releasing it; a concurrent password update must not upgrade this token.
+    # O DELETE mantém o bloqueio de escrita do SQLite. Registre a versão antes
+    # de liberá-lo; uma troca de senha concorrente não deve atualizar este token.
     version = db.scalar(select(User.session_version).where(User.id == user_id)) if user_id is not None else None
     db.commit()
     return (user_id, version) if user_id is not None and version is not None else None

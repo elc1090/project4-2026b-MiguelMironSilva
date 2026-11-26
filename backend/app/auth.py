@@ -36,7 +36,7 @@ def get_current_user(
             algorithms=["HS256"],
         )
 
-        # Old tokens can outlive the migration, but not the first rotation.
+        # Tokens antigos podem sobreviver à migração, mas não à primeira rotação.
         version = payload.get("sv", 0)
         if type(version) is not int or version < 0:
             raise invalid_credentials()
@@ -68,7 +68,7 @@ def get_current_user(
 def get_current_superuser(
     current_user: Annotated[User, Depends(get_current_user)],
 ) -> User:
-    # Authorize using the current database row, never token role claims.
+    # Autorize com o registro atual do banco, nunca com declarações de papel do token.
     if not current_user.is_superuser:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

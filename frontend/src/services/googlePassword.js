@@ -26,7 +26,7 @@ async function fingerprint(crypto, value) {
 export function clearPendingGooglePassword(browser = globalThis.window) {
     try {
         browser.sessionStorage.removeItem(PENDING_KEY);
-    } catch { /* A blocked storage also prevents starting this flow. */ }
+    } catch { /* Se o armazenamento estiver bloqueado, também não será possível iniciar este fluxo. */ }
 }
 
 export async function startGooglePassword({ token, userId, signal, isCurrent }, browser = window) {
@@ -40,8 +40,8 @@ export async function startGooglePassword({ token, userId, signal, isCurrent }, 
     const response = await requestGooglePasswordAuthorization(challenge, { token, signal });
     if (!isCurrent()) return;
 
-    // The API must set its first-party callback cookie before redirecting to Google.
-    // Never navigate to an arbitrary URL returned by the endpoint.
+    // A API deve definir seu cookie próprio de retorno antes de redirecionar ao Google.
+    // Nunca navegue para uma URL arbitrária retornada pelo endpoint.
     if (typeof response?.authorization_url !== "string") throw new Error("Invalid authorization URL");
     const expected = new URL(`${API_BASE_URL}/auth/google/password/authorize`, browser.location.href);
     const destination = new URL(response.authorization_url);
@@ -61,8 +61,8 @@ export async function startGooglePassword({ token, userId, signal, isCurrent }, 
     }
 }
 
-// This consumes only the first-password flow. The ordinary Google login uses a
-// different fragment and a different PKCE storage key.
+// Este trecho processa somente o fluxo de definição da primeira senha. O login Google comum usa
+// outro fragmento e outra chave de armazenamento PKCE.
 export function takeGooglePasswordCallback(browser = window) {
     const { location, history, sessionStorage } = browser;
     const params = new URLSearchParams(location.hash.slice(1));

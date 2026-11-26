@@ -28,8 +28,8 @@ def _validate(inspector, table, expected, uniques, foreign_keys):
             _fail(f"tamanho incompatível em {table}.{name}")
     if inspector.get_pk_constraint(table)["constrained_columns"] != ["id"]:
         _fail(f"chave primária incompatível em {table}")
-    # A reflexão de texto SQL do SQLite pode não detectar declarações UNIQUE embutidas. Leia
-    # os índices propriamente ditos, incluindo as entradas `sqlite_autoindex`, em vez disso.
+    # A reflexão do texto SQL do SQLite pode não detectar declarações UNIQUE embutidas. Consulte
+    # os próprios índices, incluindo as entradas `sqlite_autoindex`.
     quote = inspector.bind.dialect.identifier_preparer.quote
     actual_uniques = set()
     for index in inspector.bind.exec_driver_sql(f"PRAGMA index_list({quote(table)})").mappings():

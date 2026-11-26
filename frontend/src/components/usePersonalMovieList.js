@@ -25,13 +25,13 @@ export function usePersonalMovieList(loadRows, token, { watchlistOnly = false } 
 
                 const visibleRows = watchlistOnly ? data.filter(row => row.watchlist) : data;
                 setRows(visibleRows);
-                // Show the private data immediately; public metadata only enriches it.
+                // Mostre os dados privados imediatamente; os metadados públicos apenas os complementam.
                 for (const id of new Set(visibleRows.map(row => row.tmdb_id))) {
                     getMovie(id, { signal }).then(movie => {
                         if (isCurrent() && movie?.title) {
                             setMovies(previous => new Map(previous).set(id, { ...movie, id: movie.id ?? id }));
                         }
-                    }).catch(() => { /* Keep the fallback title when TMDB is unavailable. */ });
+                    }).catch(() => { /* Mantenha o título alternativo quando o TMDB estiver indisponível. */ });
                 }
             } catch (loadError) {
                 if (isCurrent()) setError(loadError);

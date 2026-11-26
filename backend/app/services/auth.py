@@ -80,7 +80,7 @@ def verify_current_password(password: str, stored_hash: str) -> bool:
     try:
         return password_hash.verify(password, stored_hash)
     except (UnknownHashError, UnicodeError):
-        # Unusable legacy data or a password not encodable as UTF-8 cannot match.
+        # Dados antigos inutilizáveis ou uma senha que não possa ser codificada em UTF-8 não podem corresponder.
         return False
 
 
@@ -90,7 +90,7 @@ def create_access_token(
     *,
     session_version: int = 0,
 ) -> str:
-    # Local account provisioning does not need JWT or TMDB credentials.
+    # A criação de contas locais não precisa de credenciais JWT nem TMDB.
     from app.config import settings
 
     expire = datetime.now(timezone.utc) + timedelta(
@@ -101,7 +101,7 @@ def create_access_token(
         "sub": user_id,
         "exp": expire,
         "sv": session_version,
-        # Distinct tokens from separate logins in the same second stay distinct.
+        # Tokens de logins diferentes no mesmo segundo continuam distintos.
         "jti": token_urlsafe(24),
     }
 

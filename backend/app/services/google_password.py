@@ -1,4 +1,4 @@
-"""Google reauthentication for adding the first password to a linked account."""
+"""Reautenticação Google para definir a primeira senha de uma conta vinculada."""
 
 import time
 from urllib.parse import urlencode, urlsplit
@@ -35,7 +35,7 @@ def _account(db: Session, user_id: int):
 
 def start(db: Session, *, user_id: int, session_version: int, session_digest: str, challenge: str) -> str:
     ticket = google.new_secret()
-    # End the authentication read transaction before acquiring a write lock.
+    # Encerre a transação de leitura da autenticação antes de obter o bloqueio de escrita.
     db.rollback()
     with db.begin():
         db.connection().exec_driver_sql("BEGIN IMMEDIATE")
@@ -68,8 +68,8 @@ def authorize(db: Session, *, ticket: str, browser_secret: str) -> str | None:
         GooglePasswordAttempt.browser_hash.is_(None),
         GooglePasswordAttempt.expires_at > now,
     ).values(
-        # Rotate the locator: the navigation ticket cannot be replayed as
-        # provider state, and the pending attempt is now browser-bound.
+        # Alterne o identificador: o tíquete de navegação não pode ser reutilizado
+        # como estado do provedor, e a tentativa pendente fica vinculada ao navegador.
         ticket_hash=google.digest(state), browser_hash=google.digest(browser_secret),
         started_at=now, expires_at=now + google.ATTEMPT_TTL,
     ).returning(
@@ -122,8 +122,8 @@ def issue_proof(db: Session, *, code: str, attempt, subject: str) -> str:
     with db.begin():
         db.connection().exec_driver_sql("BEGIN IMMEDIATE")
         account = _account(db, attempt.user_id)
-        # A password update or account deletion may have committed while the
-        # application waited for Google; never issue a proof for stale state.
+        # Uma troca de senha ou exclusão de conta pode ter sido confirmada enquanto
+        # a aplicação aguardava o Google; nunca emita uma prova para um estado obsoleto.
         if (account is None or account.session_version != attempt.session_version
                 or account.password_hash or account.subject != subject):
             raise PasswordFlowError("invalid")
@@ -137,7 +137,7 @@ def issue_proof(db: Session, *, code: str, attempt, subject: str) -> str:
 
 def consume_proof(db: Session, *, code: str, verifier: str, user_id: int,
                   session_version: int, session_digest: str) -> bool:
-    """Use once in the caller's password-write transaction; do not commit here."""
+    """Use uma vez na transação de gravação de senha chamadora; não confirme aqui."""
     if not (google.is_secret(code) and google.is_secret(verifier)):
         return False
     return db.execute(delete(GooglePasswordProof).where(

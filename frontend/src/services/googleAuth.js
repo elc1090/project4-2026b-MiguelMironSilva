@@ -16,7 +16,7 @@ const base64url = (bytes) => btoa(String.fromCharCode(...bytes))
     .replaceAll("+", "-").replaceAll("/", "_").replace(/=+$/, "");
 
 export async function startGoogleSignIn(browser = window) {
-    // No insecure fallback: the verifier must be random and its challenge must be SHA-256.
+    // Sem alternativa insegura: o verificador deve ser aleatório e seu desafio deve usar SHA-256.
     const crypto = browser.crypto;
     const verifier = base64url(crypto.getRandomValues(new Uint8Array(32)));
     const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(verifier));
@@ -31,7 +31,7 @@ export async function startGoogleSignIn(browser = window) {
     }
 }
 
-//Execute antes da renderização. Remova fragmentos OAuth reconhecidos, mesmo quando não houver login pendente.
+// Execute antes da renderização. Remova fragmentos OAuth reconhecidos, mesmo sem login pendente.
 export function takeGoogleCallback(browser = window) {
     const { location, history } = browser;
     const params = new URLSearchParams(location.hash.slice(1));
@@ -57,7 +57,7 @@ export function takeGoogleCallback(browser = window) {
 
     let result;
     return {
-        //Compartilhe um único resultado em andamento entre as reexecuções de um *effect* no React. Apenas o componente `App` pode efetivar esse resultado.
+        // Compartilhe um único resultado em andamento entre as reexecuções de um *effect* no React. Somente o componente `App` pode efetivá-lo.
         complete: () => result ??= completeGoogleSignIn(code, verifier),
     };
 }
@@ -66,7 +66,7 @@ async function completeGoogleSignIn(code, verifier) {
     const result = await exchangeGoogleCode(code, verifier);
     const token = result?.access_token;
     if (typeof token !== "string" || token.length === 0) throw new Error("Invalid token response");
-    //Verifique a sessão retornada sem sobrescrever um token de portador (bearer token) existente.
+    // Verifique a sessão retornada sem sobrescrever um token de portador existente.
     const user = await getCurrentUser({ token });
     return { token, user };
 }

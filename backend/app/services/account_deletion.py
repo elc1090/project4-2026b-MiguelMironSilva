@@ -11,7 +11,7 @@ from app.models.user import User
 
 @contextmanager
 def account_write_transaction(db: Session, actor_id: int) -> Iterator[User]:
-    # Release the authentication read transaction before taking the SQLite writer lock.
+    # Libere a transação de leitura da autenticação antes de obter o bloqueio de escrita do SQLite.
     db.rollback()
     with db.begin():
         db.connection().exec_driver_sql("BEGIN IMMEDIATE")
@@ -22,7 +22,7 @@ def account_write_transaction(db: Session, actor_id: int) -> Iterator[User]:
 
 
 def delete_account(db: Session, target: User) -> None:
-    # Fail closed if a deleted JWT subject might be assigned to a new account.
+    # Interrompa a operação se o identificador JWT de uma conta excluída puder ser reutilizado por uma nova conta.
     if not db.connection().exec_driver_sql("""
         SELECT 1 FROM sqlite_master
         WHERE type = 'table' AND name = 'users' AND instr(upper(sql), ' AUTOINCREMENT') > 0
@@ -34,5 +34,5 @@ def delete_account(db: Session, target: User) -> None:
     ) is None:
         raise HTTPException(status.HTTP_409_CONFLICT, "Não é possível excluir o último superusuário")
 
-    # User.movies cascades in the ORM; User.reviews cascades via its foreign key.
+    # User.movies é removida em cascata pelo ORM; User.reviews, pela chave estrangeira.
     db.delete(target)

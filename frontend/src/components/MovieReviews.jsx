@@ -453,7 +453,7 @@ function ReviewsForSession({ movieId, userId, isSuperuser, token, onLogin }) {
 }
 
 export default function MovieReviews({ movieId, currentUser, onLogin }) {
-    // Discard old drafts, mutations and summaries when the film or session scope changes.
+    // Descarte rascunhos, alterações e resumos antigos quando o filme ou o escopo da sessão mudar.
     if (!movieId) return null;
     const userId = currentUser?.id;
     const isSuperuser = currentUser?.is_superuser === true;

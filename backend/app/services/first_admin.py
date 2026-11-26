@@ -1,4 +1,3 @@
-from hashlib import sha256
 from hmac import compare_digest
 import re
 import time
@@ -20,18 +19,18 @@ from app.services.sessions import rotate_user_sessions
 _PRIVATE = {"Cache-Control": "no-store"}
 
 
-def _configured_digest() -> str | None:
-    digest = settings.first_admin_code_sha256.get_secret_value().strip().lower()
-    expires_at = settings.first_admin_code_expires_at.strip()
-    if not re.fullmatch(r"[0-9a-f]{64}", digest):
+def _configured_code() -> str | None:
+    code = settings.first_admin_code.get_secret_value()
+    expires_at = settings.first_admin_code_expires_at.strip().lower()
+    if not re.fullmatch(r"[A-Za-z0-9_-]{43}", code):
         return None
     if expires_at == "never":
-        return digest
+        return code
     if not re.fullmatch(r"[0-9]{1,12}", expires_at):
         return None
     if int(expires_at) <= time.time():
         return None
-    return digest
+    return code
 
 
 def _no_admin_and_never_closed(db: Session) -> bool:
@@ -57,19 +56,18 @@ def claim_first_admin(db: Session, user: User, code: str) -> tuple[CurrentUserRe
     configured = _configured_digest()
     if configured is None or not _no_admin_and_never_closed(db):
         raise _closed()
-    supplied = sha256(code.encode("ascii")).hexdigest()
-    if not compare_digest(supplied, configured):
+    if not compare_digest(code, configured):
         raise _wrong_code()
 
-    #Tentativas ocupadas ou inválidas não adquirem um bloqueio de escrita. Uma tentativa válida deve
-    #repetir todas as decisões de segurança dentro do mecanismo de bloqueio antes de promover qualquer pessoa.
+    # Tentativas concorrentes ou inválidas não adquirem o bloqueio de escrita. Uma tentativa válida deve
+    # repetir todas as verificações de segurança sob bloqueio antes de promover qualquer conta.
     with account_write_transaction(db, user_id) as actor:
         if actor.session_version != version:
             raise invalid_credentials()
         configured = _configured_digest()
         if configured is None or not _no_admin_and_never_closed(db):
             raise _closed()
-        if not compare_digest(supplied, configured):
+        if not compare_digest(code, configured):
             raise _wrong_code()
         actor.is_superuser = True
         close_first_admin_setup(db)

@@ -14,7 +14,7 @@ from app.services.sessions import rotate_user_sessions
 
 def update_password(db: Session, user: User, token: str, body: PasswordUpdateRequest) -> tuple[int, int]:
     user_id, version, stored_hash = user.id, user.session_version, user.password_hash
-    # Do not hold SQLite's write lock while verifying or hashing a password.
+    # Não mantenha o bloqueio de escrita do SQLite durante a verificação ou o hash da senha.
     db.rollback()
     if body.current_password is not None:
         if not stored_hash:

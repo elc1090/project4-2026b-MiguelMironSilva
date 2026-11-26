@@ -1,4 +1,4 @@
-"""Support password rotation and single-use Google step-up proofs.
+"""Dá suporte à troca de senha e às confirmações Google de uso único.
 
 Revision ID: 20261124_08
 Revises: 20261123_07
@@ -22,7 +22,7 @@ def _scope_columns():
 
 
 def upgrade():
-    # SQLite ADD COLUMN leaves the users AUTOINCREMENT constraint untouched.
+    # ALTER TABLE ADD COLUMN do SQLite preserva a restrição AUTOINCREMENT de users.
     op.add_column("users", sa.Column("session_version", sa.Integer(), server_default="0", nullable=False))
     op.create_table(
         "google_password_attempts",

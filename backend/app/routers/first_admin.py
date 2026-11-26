@@ -26,7 +26,7 @@ class _PrivateRoute(APIRoute):
             try:
                 return await handler(request)
             except RequestValidationError:
-                # Default validation responses can contain the submitted code.
+                # Respostas padrão de validação podem incluir o código enviado.
                 raise HTTPException(status.HTTP_422_UNPROCESSABLE_CONTENT,
                                     "Corpo da solicitação inválido", headers=_PRIVATE) from None
 

@@ -1,4 +1,4 @@
-"""Add a permanent marker for the first administrator setup.
+"""Adiciona um marcador permanente para o primeiro cadastro de administrador.
 
 Revision ID: 20261124_09
 Revises: 20261124_08
@@ -19,7 +19,7 @@ def upgrade():
         sa.Column("closed_at", sa.DateTime(timezone=True), nullable=False),
         sa.CheckConstraint("id = 1", name="ck_first_admin_setup_singleton"),
     )
-    # Existing installations with an administrator have already initialized the role.
+    # Instalações existentes com um administrador já inicializaram esse papel.
     op.execute(sa.text("""
         INSERT INTO first_admin_setup (id, closed_at)
         SELECT 1, CURRENT_TIMESTAMP

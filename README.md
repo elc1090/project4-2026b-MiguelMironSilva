@@ -123,13 +123,15 @@ Frontend
 - [Docker Desktop](https://www.docker.com)
 - IA usada para planejamento, tirada de dúvidas e debugging: [GPT-6.1 Sol](https://openai.com)
 
+### Guia de primeiro superusuário
 
+O primeiro superusuário é instanciado a partir da primeira inserção de uma senha por uma conta de usuário. Primeiro, registre uma conta nova, vá ao painel de Minha Conta, e insira a senha `primeiro_codigo` no painel de `Configurar primeiro superusuário`. Feito isso, essa conta se tornará o primeiro administrador do sistema.
 
 #### Login com Google (opcional)
 
-No ambiente de desenvolvimento, abra o frontend em `http://localhost:5173` e use `http://127.0.0.1:8000/api/auth/google/callback` como URI de redirecionamento do cliente Web na Google Auth Platform. Configure `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no ambiente do backend, nunca no frontend. Para endereços diferentes, configure `FRONTEND_URL` (origem do frontend) e `GOOGLE_REDIRECT_URI` (callback exato no Google); `VITE_API_BASE_URL` deve usar a mesma origem pública do callback, com o prefixo `/api`.
+No ambiente de desenvolvimento, abra o frontend em `http://localhost:5173` e use `http://127.0.0.1:8000/api/auth/google/callback` como URI de redirecionamento do cliente Web na Google Auth Platform. Configure `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` no ambiente do backend. Para endereços diferentes, configure `FRONTEND_URL` (origem do frontend) e `GOOGLE_REDIRECT_URI` (callback exato no Google); `VITE_API_BASE_URL` deve usar a mesma origem pública do callback, com o prefixo `/api`.
 
-Antes de reiniciar a API, instale as dependências e aplique as migrações em `backend` com `python -m pip install -r requirements.txt` e `python -m alembic upgrade head`. Faça backup do SQLite antes de migrar um banco existente. Evite registrar a query string do callback em logs de acesso, pois ela contém o código de autorização.
+Antes de reiniciar a API, instale as dependências e aplique as migrações em `backend` com `python -m pip install -r requirements.txt` e `python -m alembic upgrade head`. Faça backup do SQLite antes de migrar um banco existente.
 
 #### Aplicação local com Docker Compose
 

@@ -1,4 +1,4 @@
-"""Administração local: python -m app.cli --help (run from backend)."""
+"""Administração local: python -m app.cli --help (execute a partir da pasta backend)."""
 import argparse
 import getpass
 import sys
@@ -59,7 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     except SuperuserError as exc:
         print(f"Erro: {exc}", file=sys.stderr)
     except Exception:
-        # Do not print exception text/tracebacks: DB errors can include hashes/SQL.
+        # Não exiba mensagens de exceção ou rastreamentos: erros do banco podem incluir hashes ou SQL.
         print("Falha na operação; nenhuma informação sensível foi exibida", file=sys.stderr)
     return 1
 

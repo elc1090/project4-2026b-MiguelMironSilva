@@ -1,4 +1,4 @@
-"""Add an independent watchlist flag to user movie states.
+"""Adiciona um indicador independente de lista para assistir aos estados de filmes.
 
 Revision ID: 20261119_06
 Revises: 20261118_05
@@ -13,7 +13,7 @@ depends_on = None
 
 
 def upgrade():
-    # Add the column in place: no table rebuild or changes to existing references.
+    # Adicione a coluna no local, sem reconstruir a tabela nem alterar referências existentes.
     op.add_column(
         "user_movies",
         sa.Column("watchlist", sa.Boolean(), nullable=False, server_default=sa.false()),

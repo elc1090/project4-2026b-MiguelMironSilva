@@ -5,7 +5,7 @@ from alembic import context
 from sqlalchemy import create_engine, pool
 
 from app.database import Base, DATABASE_URL
-from app import models  # noqa: F401 - register all mapped tables
+from app import models  # noqa: F401 - registra todas as tabelas mapeadas
 
 config = context.config
 if config.config_file_name:

@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:5173"
     gemini_api_key: SecretStr = SecretStr("")
     gemini_model: str = ""
-    first_admin_code_sha256: SecretStr = SecretStr("")
+    first_admin_code: SecretStr = SecretStr("")
     first_admin_code_expires_at: str = ""
 
     @field_validator("google_redirect_uri", "frontend_url")
@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
-        extra="ignore",  # .env can also contain deployment or other integration settings.
+        extra="ignore",  # .env também pode conter opções de implantação ou de outras integrações.
     )
 
 
