@@ -22,7 +22,7 @@ _PRIVATE = {"Cache-Control": "no-store"}
 def _configured_code() -> str | None:
     code = settings.first_admin_code.get_secret_value()
     expires_at = settings.first_admin_code_expires_at.strip().lower()
-    if not re.fullmatch(r"[A-Za-z0-9_-]{43}", code):
+    if not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", code):
         return None
     if expires_at == "never":
         return code

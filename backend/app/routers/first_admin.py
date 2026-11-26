@@ -40,7 +40,7 @@ class FirstAdminClaim(BaseModel):
     @field_validator("code")
     @classmethod
     def validate_format(cls, value: SecretStr) -> SecretStr:
-        if not re.fullmatch(r"[A-Za-z0-9_-]{43}", value.get_secret_value()):
+        if not re.fullmatch(r"[A-Za-z0-9_-]{8,128}", value.get_secret_value()):
             raise ValueError("Formato de código inválido")
         return value
 
