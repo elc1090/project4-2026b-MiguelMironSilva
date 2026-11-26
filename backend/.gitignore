@@ -1,4 +1,5 @@
 .env
+.env.example
 .venv
 srv-string.txt
 atlas-credentials.env

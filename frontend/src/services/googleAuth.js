@@ -31,7 +31,7 @@ export async function startGoogleSignIn(browser = window) {
     }
 }
 
-// Run before rendering. Strip recognized OAuth fragments even when no sign-in is pending.
+//Execute antes da renderização. Remova fragmentos OAuth reconhecidos, mesmo quando não houver login pendente.
 export function takeGoogleCallback(browser = window) {
     const { location, history } = browser;
     const params = new URLSearchParams(location.hash.slice(1));
@@ -57,7 +57,7 @@ export function takeGoogleCallback(browser = window) {
 
     let result;
     return {
-        // Share a single in-flight result across React effect replays. Only App may commit it.
+        //Compartilhe um único resultado em andamento entre as reexecuções de um *effect* no React. Apenas o componente `App` pode efetivar esse resultado.
         complete: () => result ??= completeGoogleSignIn(code, verifier),
     };
 }
@@ -66,7 +66,7 @@ async function completeGoogleSignIn(code, verifier) {
     const result = await exchangeGoogleCode(code, verifier);
     const token = result?.access_token;
     if (typeof token !== "string" || token.length === 0) throw new Error("Invalid token response");
-    // Verify the returned session without writing it over an existing bearer token.
+    //Verifique a sessão retornada sem sobrescrever um token de portador (bearer token) existente.
     const user = await getCurrentUser({ token });
     return { token, user };
 }

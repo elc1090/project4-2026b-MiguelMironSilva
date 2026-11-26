@@ -23,8 +23,13 @@ _PRIVATE = {"Cache-Control": "no-store"}
 def _configured_digest() -> str | None:
     digest = settings.first_admin_code_sha256.get_secret_value().strip().lower()
     expires_at = settings.first_admin_code_expires_at.strip()
-    if (not re.fullmatch(r"[0-9a-f]{64}", digest) or not re.fullmatch(r"[0-9]{1,12}", expires_at)
-            or int(expires_at) <= time.time()):
+    if not re.fullmatch(r"[0-9a-f]{64}", digest):
+        return None
+    if expires_at == "never":
+        return digest
+    if not re.fullmatch(r"[0-9]{1,12}", expires_at):
+        return None
+    if int(expires_at) <= time.time():
         return None
     return digest
 
@@ -56,8 +61,8 @@ def claim_first_admin(db: Session, user: User, code: str) -> tuple[CurrentUserRe
     if not compare_digest(supplied, configured):
         raise _wrong_code()
 
-    # Busy or invalid guesses do not acquire a write lock. A valid guess must
-    # repeat every security decision inside the lock before promoting anyone.
+    #Tentativas ocupadas ou inválidas não adquirem um bloqueio de escrita. Uma tentativa válida deve
+    #repetir todas as decisões de segurança dentro do mecanismo de bloqueio antes de promover qualquer pessoa.
     with account_write_transaction(db, user_id) as actor:
         if actor.session_version != version:
             raise invalid_credentials()

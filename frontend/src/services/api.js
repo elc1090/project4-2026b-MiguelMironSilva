@@ -209,7 +209,7 @@ export const claimFirstAdmin = async (code, { token, signal }) => {
     return readFirstAdminResponse(response);
 };
 
-// Credentials are not persisted here: only App may commit a verified replacement token.
+// As credenciais não são persistidas aqui: apenas o aplicativo pode efetivar um token de substituição verificado.
 export const updatePassword = async (proof, newPassword, { token, signal }) => {
     const response = await requestApi(`${API_BASE_URL}/auth/password`, {
         method: "PATCH",
@@ -238,7 +238,6 @@ export const deleteCurrentUser = async (password, { signal } = {}) => {
         signal,
     });
     if (response.status === 204) return;
-    // This mutation's outcome is defined by its status, not an optional body.
     const error = new Error("Não foi possível excluir a conta.");
     error.status = response.status;
     throw error;

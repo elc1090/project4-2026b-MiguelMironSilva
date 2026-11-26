@@ -1,4 +1,4 @@
-"""Local administration: python -m app.cli --help (run from backend)."""
+"""Administração local: python -m app.cli --help (run from backend)."""
 import argparse
 import getpass
 import sys
@@ -15,12 +15,10 @@ from app.services.superusers import (
 
 class _SafeParser(argparse.ArgumentParser):
     def error(self, message):
-        # Unknown arguments might themselves contain passwords. Never echo them.
         self.exit(2, "Argumentos inválidos; consulte --help. Não passe senhas em argumentos.\n")
 
 
 def _hidden_password(prompt: str) -> str:
-    # getpass normally falls back to echoed stdin. Fail closed instead.
     with warnings.catch_warnings():
         warnings.simplefilter("error", getpass.GetPassWarning)
         return getpass.getpass(prompt)

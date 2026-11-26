@@ -295,7 +295,7 @@ const handleClaimFirstAdmin = async (code) => {
         ++sessionRevision.current;
         const replacement = { token };
         authenticatedSession.current = replacement;
-        setCurrentUser((user) => user?.id === firstAdminUserId ? { ...user, is_superuser: true } : user);
+        setCurrentUser(verified);
         setFirstAdmin({ session: replacement, phase: "success" });
     } catch (error) {
         if (!isCurrent()) return;

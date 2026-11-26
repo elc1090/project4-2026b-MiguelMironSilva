@@ -4,7 +4,7 @@
 
 O papel administrativo usa a coluna `User.is_superuser` criada na etapa 0. Cadastro público ignora campos extras (incluindo `is_superuser`, `role` e `id`) e cria sempre usuário comum. Cadastro e `GET /api/auth/me` incluem `is_superuser: bool` no `UserResponse`, sem senha/hash.
 
-`GET /api/admin/me` usa `get_current_superuser`, encadeado a `get_current_user`: anônimo/token inválido/usuário removido recebe 401, comum recebe 403, superusuário recebe 200 e `UserResponse`. O papel é lido do usuário atual no banco a cada requisição; claims JWT ou dados frontend não concedem privilégios. Promoção/revogação no banco vale já na próxima requisição com o mesmo token. Não existe endpoint público de promoção nem checkbox administrativo.
+`GET /api/admin/me` usa `get_current_superuser`, encadeado a `get_current_user`: anônimo/token inválido/usuário removido recebe 401, comum recebe 403, superusuário recebe 200 e `UserResponse`. O papel é lido do usuário atual no banco a cada requisição; claims JWT ou dados frontend não concedem privilégios. A promoção administrativa comum não altera o token. Na configuração inicial por código, as sessões existentes da conta são revogadas e a operação retorna um novo token. Não existe promoção anônima nem checkbox administrativo no cadastro.
 
 ## Preparação e backups (operador autorizado)
 
@@ -13,7 +13,13 @@ O papel administrativo usa a coluna `User.is_superuser` criada na etapa 0. Cadas
 1. Faça a operação em ambiente autorizado, terminal confiável, sem gravação de sessão ou logging de teclas. Restrinja acesso ao host, banco e backups.
 2. Confira o diretório: execute a partir de `backend`. A configuração atual usa SQLite `sqlite:///./webapp_filmes.db`, relativo ao diretório corrente; executar em outro lugar pode apontar para outro banco. A CLI não oferece `--database`, não cria tabelas e não executa migrações.
 3. Antes de qualquer alteração, faça backup consistente e teste restauração em cópia isolada. Pare os escritores e copie o banco (incluindo arquivos auxiliares SQLite, quando aplicável), ou use a API SQLite Backup/`.backup` com ferramenta administrada; não copie apenas o arquivo principal durante escritas/WAL. Proteja o backup como dado sensível e registre local/data/responsável sem segredos.
-4. Confirme que a migração **existente** da etapa 0 já foi aplicada ao banco pretendido. A CLI falha com mensagem sanitizada se o schema não estiver pronto; ela não tenta consertá-lo. Se necessário, siga o [guia de migrações](<MIGRACOES.md>) após fazer backup. Esta etapa não acrescenta migração nem aplica alterações ao banco real automaticamente.
+4. Confirme que as migrações até `head` foram aplicadas ao banco pretendido. A CLI falha com mensagem sanitizada se o schema não estiver pronto; ela não tenta consertá-lo. Se necessário, siga o [guia de migrações](<MIGRACOES.md>) após fazer backup.
+
+## Primeiro superusuário pela interface
+
+1. Em uma instalação nova, gere localmente um segredo aleatório com `secrets.token_urlsafe(32)`. Configure **somente** seu SHA-256 hexadecimal em `FIRST_ADMIN_CODE_SHA256` e a validade em segundos Unix em `FIRST_ADMIN_CODE_EXPIRES_AT`, seguindo o [exemplo](<.env.example>). Use valores próprios por ambiente. Não deixe o código em logs, no Git, no frontend ou em relatórios.
+2. Depois da migração e do reinício do backend, entre na conta que deve administrar a instalação. Abra **Minha conta → Configurar primeiro superusuário** e informe o código original, não o hash. A aplicação confirma o acesso e mostra **Administração** sem criar outra conta.
+3. O formulário só aparece quando o código está válido e o banco ainda não tem administrador nem registro de configuração encerrada. Ter usado um código ou ter provisionado um administrador pela CLI encerra a configuração naquele banco. Ao restaurar um backup anterior ao uso, revogue a configuração antiga antes de iniciar a API. Após o uso, remova as duas variáveis e descarte a cópia privada do código.
 
 ## Comandos locais
 
