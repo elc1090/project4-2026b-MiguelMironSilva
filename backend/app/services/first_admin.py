@@ -40,7 +40,7 @@ def _no_admin_and_never_closed(db: Session) -> bool:
 
 
 def first_admin_available(db: Session) -> bool:
-    return _configured_digest() is not None and _no_admin_and_never_closed(db)
+    return _configured_code() is not None and _no_admin_and_never_closed(db)
 
 
 def _closed() -> HTTPException:
@@ -53,7 +53,7 @@ def _wrong_code() -> HTTPException:
 
 def claim_first_admin(db: Session, user: User, code: str) -> tuple[CurrentUserResponse, int]:
     user_id, version = user.id, user.session_version
-    configured = _configured_digest()
+    configured = _configured_code()
     if configured is None or not _no_admin_and_never_closed(db):
         raise _closed()
     if not compare_digest(code, configured):
@@ -64,7 +64,7 @@ def claim_first_admin(db: Session, user: User, code: str) -> tuple[CurrentUserRe
     with account_write_transaction(db, user_id) as actor:
         if actor.session_version != version:
             raise invalid_credentials()
-        configured = _configured_digest()
+        configured = _configured_code()
         if configured is None or not _no_admin_and_never_closed(db):
             raise _closed()
         if not compare_digest(code, configured):
